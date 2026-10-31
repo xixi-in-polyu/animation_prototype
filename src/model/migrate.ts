@@ -1,6 +1,7 @@
 import { CURRENT_SCHEMA_VERSION, type AnimationProject } from './types';
 import { createDefaultMotion } from './motion';
 import { assertValidProject } from './validator';
+import { defaultCaptionForTemplate, defaultVisualForType } from './visual';
 
 export function migrateProject(input: unknown): AnimationProject {
   if (!input || typeof input !== 'object') throw new Error('The selected file is not a project.');
@@ -36,6 +37,17 @@ export function migrateProject(input: unknown): AnimationProject {
       scene.transitionOut = sceneIndex < scenes.length - 1 ? { preset: 'fade', duration: 0.6 } : undefined;
     });
     candidate.schemaVersion = 3;
+  }
+  if (candidate.schemaVersion === 3) {
+    const scenes = Array.isArray(candidate.scenes) ? candidate.scenes as Array<Record<string, unknown>> : [];
+    scenes.forEach((scene) => {
+      scene.captionMode = defaultCaptionForTemplate(scene.template as AnimationProject['scenes'][number]['template']);
+      const elements = Array.isArray(scene.elements) ? scene.elements as Array<Record<string, unknown>> : [];
+      elements.forEach((element) => {
+        element.visual = defaultVisualForType(element.type as AnimationProject['scenes'][number]['elements'][number]['type']);
+      });
+    });
+    candidate.schemaVersion = 4;
   }
   assertValidProject(candidate);
   return candidate;

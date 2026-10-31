@@ -1,4 +1,13 @@
-export const CURRENT_SCHEMA_VERSION = 3;
+export const CURRENT_SCHEMA_VERSION = 4;
+
+export type CaptionMode = 'bottom' | 'side' | 'keywords' | 'hidden';
+export type VisualVariant = 'auto' | 'grid' | 'rail' | 'split' | 'orbital' | 'editorial' | 'diagram' | 'poster' | 'minimal';
+export type SurfaceStyle = 'none' | 'soft' | 'outline';
+
+export interface ElementVisual {
+  variant: VisualVariant;
+  surface: SurfaceStyle;
+}
 
 export type MotionPreset =
   | 'fade-rise'
@@ -118,6 +127,7 @@ export interface SceneElement {
     align?: 'left' | 'center' | 'right';
   };
   motion: ElementMotion;
+  visual: ElementVisual;
   sourcePages?: number[];
 }
 
@@ -136,6 +146,7 @@ export interface Scene {
   narration: NarrationSegment[];
   knowledgeNodeIds: string[];
   transitionOut?: SceneTransition;
+  captionMode: CaptionMode;
 }
 
 export interface Chapter {

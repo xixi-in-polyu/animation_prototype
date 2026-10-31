@@ -57,13 +57,13 @@ function Formula({ content, items = [], selectedItemId, onSelectItem, motion }: 
 function ElementBody({ element, selectedItemId, onSelectItem, motion }: { element: SceneElement; selectedItemId?: string; onSelectItem?: ItemProps['onSelectItem']; motion: CompiledMotion }) {
   const props = { items: element.items, selectedItemId, onSelectItem, motion };
   switch (element.type) {
-    case 'flow': return <><small className="element-kicker">{element.content}</small><Flow {...props} /></>;
+    case 'flow': return <><small className="flow-label">{element.content}</small><Flow {...props} /></>;
     case 'cards': return <><small className="element-kicker">{element.content}</small><Cards {...props} /></>;
     case 'lifecycle': return <Lifecycle {...props} accent={element.style?.accent} />;
-    case 'comparison': return <><small className="element-kicker">{element.content}</small><Comparison {...props} /></>;
+    case 'comparison': return <><small className="comparison-label">{element.content}</small><Comparison {...props} /></>;
     case 'timeline': return <><small className="element-kicker">{element.content}</small><Timeline {...props} /></>;
-    case 'metrics': return <><small className="element-kicker">{element.content}</small><Metrics {...props} /></>;
-    case 'topology': return <><small className="element-kicker">{element.content}</small><Topology {...props} /></>;
+    case 'metrics': return <><small className="metrics-label">{element.content}</small><Metrics {...props} /></>;
+    case 'topology': return <><small className="topology-label">{element.content}</small><Topology {...props} /></>;
     case 'formula': return <Formula content={element.content} {...props} />;
     case 'title': return <h1>{element.content.split('\n').map((line, index, lines) => <span style={motion.itemStyle(index, lines.length)} key={line}>{line}</span>)}</h1>;
     case 'badge': return <div className="visual-badge"><i />{element.content}</div>;
@@ -102,7 +102,7 @@ export function SceneRenderer({ project, sceneId, localTime, selectedElementId, 
       const motion = compileElementMotion(item, scene, localTime, project.renderConfig.fps, finalLayout);
       return <div
       key={item.id}
-      className={`scene-element type-${item.type} ${selectedElementId === item.id ? 'is-selected' : ''}`}
+      className={`scene-element type-${item.type} variant-${item.visual.variant} surface-${item.visual.surface} ${selectedElementId === item.id ? 'is-selected' : ''}`}
       style={{
         left: `${item.x}%`, top: `${item.y}%`, width: `${item.width}%`, height: `${item.height}%`,
         '--element-accent': item.style?.accent || chapter.color,

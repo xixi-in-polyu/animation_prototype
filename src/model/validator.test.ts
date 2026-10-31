@@ -32,7 +32,7 @@ describe('project model', () => {
     }));
     const migrated = migrateProject(legacy);
     const flow = migrated.scenes[1].elements.find((element) => element.type === 'flow');
-    expect(migrated.schemaVersion).toBe(3);
+    expect(migrated.schemaVersion).toBe(4);
     expect(migrated.renderConfig).toEqual({ fps: 30, width: 1920, height: 1080 });
     expect(flow?.items?.[0]).toEqual({ id: 's2-flow-item-1', label: 'Requirements' });
     expect(flow?.motion.beats).toHaveLength(4);
@@ -49,11 +49,34 @@ describe('project model', () => {
       });
     });
     const migrated = migrateProject(legacy);
-    expect(migrated.schemaVersion).toBe(3);
+    expect(migrated.schemaVersion).toBe(4);
     expect(migrated.scenes[0].transitionOut).toEqual({ preset: 'fade', duration: 0.6 });
     expect(migrated.scenes.at(-1)?.transitionOut).toBeUndefined();
     expect(migrated.scenes[0].elements[0].motion.enter.preset).toBe('fade-rise');
     expect(migrated.scenes[0].elements[0].motion.beats).toHaveLength(4);
+  });
+
+  it('migrates schema v3 projects into editable visual grammars and caption layouts', () => {
+    const legacy = JSON.parse(JSON.stringify(createSdlcProject()));
+    legacy.schemaVersion = 3;
+    legacy.scenes.forEach((scene: { captionMode?: unknown; elements: Array<{ visual?: unknown }> }) => {
+      delete scene.captionMode;
+      scene.elements.forEach((element) => delete element.visual);
+    });
+    const migrated = migrateProject(legacy);
+    expect(migrated.schemaVersion).toBe(4);
+    expect(migrated.scenes[0].captionMode).toBe('keywords');
+    expect(migrated.scenes[1].elements.find((element) => element.type === 'flow')?.visual).toEqual({ variant: 'rail', surface: 'none' });
+    expect(projectValidator.validate(migrated).filter((issue) => issue.severity === 'error')).toEqual([]);
+  });
+
+  it('rejects unsupported visual grammar and caption layout values', () => {
+    const project = createSdlcProject();
+    project.scenes[0].captionMode = 'floating-everywhere' as never;
+    project.scenes[0].elements[0].visual.variant = 'random-html' as never;
+    const errors = projectValidator.validate(project).filter((issue) => issue.severity === 'error');
+    expect(errors.some((issue) => issue.path.endsWith('captionMode'))).toBe(true);
+    expect(errors.some((issue) => issue.path.endsWith('visual.variant'))).toBe(true);
   });
 
   it('uses integer frames as the deterministic playback clock', () => {

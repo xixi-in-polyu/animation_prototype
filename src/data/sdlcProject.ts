@@ -1,6 +1,7 @@
 import type { AnimationProject, ElementType, NarrationSegment, Scene, SceneElement, SceneTemplate } from '../model/types';
 import { CURRENT_SCHEMA_VERSION } from '../model/types';
 import { createDefaultMotion } from '../model/motion';
+import { defaultCaptionForTemplate, defaultVisualForType } from '../model/visual';
 
 const sourceId = 'source-sdlc-lecture';
 
@@ -38,6 +39,7 @@ const element = (
   height,
   style: { accent, tone: 'glass', align: type === 'title' ? 'left' : 'center' },
   motion: createDefaultMotion(id, type, script, { enter: type === 'flow' || type === 'timeline' ? 'draw' : 'rise', start, duration: 1.1 }),
+  visual: defaultVisualForType(type),
   sourcePages: pages,
 });
 
@@ -65,6 +67,7 @@ const scene = (
     narration: narrationSegments,
     knowledgeNodeIds,
     transitionOut: { preset: 'fade', duration: 0.6 },
+    captionMode: defaultCaptionForTemplate(template),
   };
 };
 
