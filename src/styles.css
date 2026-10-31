@@ -87,6 +87,65 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .visual-formula { border-left-color: var(--element-accent); }.visual-formula .fraction { border-top-color: #4b5250; }
 .caption span { color: #323735; background: rgba(251,249,245,.94); border-color: rgba(61,67,65,.18); box-shadow: 0 8px 28px rgba(62,68,66,.14); }
 
+/* Schema v4: templates establish composition; component families no longer share one card skin. */
+.template-opening .scene-grid { background-size: 100% 100%; background-image: linear-gradient(90deg, transparent 0 67%, rgba(111,124,119,.1) 67% 67.12%, transparent 67.12%); }
+.template-opening .orb-one { width: 58%; right: -18%; top: -42%; opacity: .26; }
+.template-concept .scene-grid { mask-image: linear-gradient(90deg, #000 0 62%, transparent 88%); }
+.template-process .scene-grid { background-size: 7.5% 100%; mask-image: linear-gradient(to right, transparent, #000 16%, #000 84%, transparent); }
+.template-comparison .scene-grid { background-size: 50% 100%; background-image: linear-gradient(90deg, rgba(72,79,76,.045) 0 49.9%, rgba(72,79,76,.14) 50%, rgba(72,79,76,.045) 50.1%); }
+.template-incident .scene-grid { background-size: 100% 12%; background-image: linear-gradient(rgba(154,105,91,.1) 1px, transparent 1px); }
+.template-architecture .scene-grid { background-size: 3.5% 6%; background-image: linear-gradient(rgba(85,111,124,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(85,111,124,.07) 1px, transparent 1px); mask-image: none; }
+.template-closing .scene-grid { background-image: radial-gradient(circle at 50% 45%, transparent 0 18%, rgba(82,91,87,.09) 18.2% 18.35%, transparent 18.55% 29%, rgba(82,91,87,.07) 29.2% 29.35%, transparent 29.55%); background-size: 100% 100%; }
+
+.flow-label, .comparison-label, .metrics-label, .topology-label { display: block; color: var(--element-accent); text-transform: uppercase; }
+.flow-label { margin-bottom: 1.2cqw; font: 500 .92cqw DM Mono, monospace; letter-spacing: .18em; }
+.flow-unit { background: transparent; border: 0; border-top: 1px solid color-mix(in srgb, var(--element-accent) 52%, transparent); box-shadow: none; padding: 1.2cqw .7cqw .7cqw; }
+.flow-unit::before { content: ''; position: absolute; top: -.28cqw; left: 0; width: .55cqw; height: .55cqw; border-radius: 50%; background: var(--element-accent); }
+.flow-unit b { font-size: 1cqw; font-weight: 600; }
+.visual-flow.is-dense { gap: 1cqw 1.5cqw; }
+.visual-flow.is-dense .flow-unit { border-top: 0; border-left: 2px solid color-mix(in srgb, var(--element-accent) 56%, transparent); padding: .45cqw .8cqw; }
+.visual-flow.is-dense .flow-unit::before { display: none; }
+
+.visual-card { background: rgba(255,255,255,.58); border: 1px solid rgba(63,70,68,.14); box-shadow: 0 .7cqw 2cqw rgba(70,75,73,.07); }
+.variant-editorial .visual-card:nth-child(2n) { transform: translateY(.7cqw); }
+.variant-grid .visual-cards { grid-template-columns: repeat(3, 1fr); }
+
+.comparison-label { margin-bottom: .9cqw; font: 500 .78cqw DM Mono, monospace; letter-spacing: .2em; text-align: center; }
+.visual-comparison { gap: 0; }
+.visual-comparison > div { background: transparent; border: 0; box-shadow: none; padding: 1.1cqw 2cqw; }
+.visual-comparison > div + div { border-left: 1px solid color-mix(in srgb, var(--element-accent) 42%, transparent); }
+.visual-comparison small { font-size: 2.8cqw; line-height: 1; opacity: .42; }
+.visual-comparison b { font-size: 1.45cqw; margin-top: .7cqw; }
+
+.metrics-label { margin-bottom: .6cqw; font: 500 .72cqw DM Mono, monospace; letter-spacing: .16em; }
+.visual-metrics { gap: 0; }
+.visual-metrics div { background: transparent; border: 0; border-left: 1px solid rgba(63,70,68,.18); box-shadow: none; padding: .4cqw 1.3cqw; }
+.visual-metrics div:first-child { border-left: .25cqw solid var(--element-accent); }
+.visual-metrics strong { font-size: 3.3cqw; font-weight: 700; }
+.visual-metrics span { font-size: .78cqw; letter-spacing: .08em; }
+
+.topology-label { margin-bottom: .8cqw; font: 500 .72cqw DM Mono, monospace; letter-spacing: .18em; text-align: center; }
+.visual-topology { align-items: center; gap: 2.4cqw; }
+.visual-topology > div { background: transparent; border: 0; box-shadow: none; height: 72%; justify-content: center; }
+.visual-topology span { width: 4.2cqw; height: 4.2cqw; background: color-mix(in srgb, var(--element-accent) 18%, #faf8f3); box-shadow: 0 0 0 .6cqw rgba(255,255,255,.62), 0 1cqw 2.2cqw rgba(70,75,73,.1); }
+.visual-topology i { right: -1.75cqw; font-size: 1.3cqw; }
+
+.visual-formula { position: relative; background: transparent; border: 0; box-shadow: none; padding: 0 0 0 2cqw; }
+.visual-formula::before { content: ''; position: absolute; left: 0; top: 12%; bottom: 12%; width: .28cqw; background: var(--element-accent); }
+.visual-formula small { font-size: .9cqw; }
+.visual-formula b { font-size: 2.5cqw; }
+.visual-formula span { font-size: 2cqw; }
+
+.surface-outline { outline: 1px solid color-mix(in srgb, var(--element-accent) 42%, transparent); outline-offset: .7cqw; }
+.surface-soft { border-radius: .35cqw; }
+.surface-soft .visual-card { background: color-mix(in srgb, var(--element-accent) 10%, rgba(255,255,255,.72)); }
+.variant-minimal :is(.visual-card, .flow-unit, .visual-comparison > div, .visual-metrics div, .visual-topology > div) { background: transparent; box-shadow: none; }
+
+.caption-side { left: auto; right: 4%; bottom: 11%; width: 30%; text-align: left; }
+.caption-side span { max-width: 100%; border-left: .3em solid #9faf91; }
+.caption-keywords { left: 7%; right: auto; bottom: 9%; width: 46%; text-align: left; }
+.caption-keywords span { background: transparent; border: 0; box-shadow: none; padding: 0; color: #505956; font: 600 clamp(11px, 1.18vw, 17px) DM Mono, monospace; letter-spacing: .04em; text-transform: uppercase; }
+
 /* The editor chrome can switch independently from the animation project theme. */
 .ui-light { color-scheme: light; background: #eef1f4; color: #171b20; }
 .ui-light .topbar { background: rgba(250,251,252,.96); border-bottom-color: #d8dde3; }

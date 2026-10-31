@@ -1,5 +1,6 @@
 import { CURRENT_SCHEMA_VERSION, type AnimationProject, type ProjectValidator, type ValidationIssue } from './types';
 import { AMBIENT_PRESETS, BEAT_PRESETS, ENTER_PRESETS, EXIT_PRESETS, MOTION_PRESETS, resolveCueStart } from './motion';
+import { CAPTION_MODES, SURFACE_STYLES, VISUAL_VARIANTS } from './visual';
 
 const supportedElements = new Set([
   'title', 'text', 'cards', 'lifecycle', 'flow', 'comparison', 'timeline',
@@ -36,6 +37,7 @@ export const projectValidator: ProjectValidator = {
       if (!scene.id) issues.push({ path: `${base}.id`, message: 'Scene id is required.', severity: 'error' });
       if (!chapterIds.has(scene.chapterId)) issues.push({ path: `${base}.chapterId`, message: 'Scene references an unknown chapter.', severity: 'error' });
       if (!Number.isFinite(scene.duration) || scene.duration <= 0) issues.push({ path: `${base}.duration`, message: 'Duration must be greater than zero.', severity: 'error' });
+      if (!CAPTION_MODES.includes(scene.captionMode)) issues.push({ path: `${base}.captionMode`, message: 'Unsupported caption layout.', severity: 'error' });
       if (scene.transitionOut) {
         if (!['fade', 'slide-left', 'slide-up', 'wipe'].includes(scene.transitionOut.preset)) issues.push({ path: `${base}.transitionOut.preset`, message: 'Unsupported scene transition preset.', severity: 'error' });
         if (!Number.isFinite(scene.transitionOut.duration) || scene.transitionOut.duration <= 0 || scene.transitionOut.duration >= scene.duration) issues.push({ path: `${base}.transitionOut.duration`, message: 'Transition duration must be positive and shorter than the scene.', severity: 'error' });
@@ -45,6 +47,8 @@ export const projectValidator: ProjectValidator = {
         if (!supportedElements.has(element.type)) issues.push({ path: `${base}.elements[${elementIndex}].type`, message: `Unsupported element type: ${element.type}.`, severity: 'error' });
         if (!element.id?.trim()) issues.push({ path: `${elementBase}.id`, message: 'Every visible element needs a stable id.', severity: 'error' });
         if (!element.content?.trim() && !element.items?.length) issues.push({ path: elementBase, message: 'Element has no editable content.', severity: 'error' });
+        if (!element.visual || !VISUAL_VARIANTS.includes(element.visual.variant)) issues.push({ path: `${elementBase}.visual.variant`, message: 'Unsupported visual variant.', severity: 'error' });
+        if (!element.visual || !SURFACE_STYLES.includes(element.visual.surface)) issues.push({ path: `${elementBase}.visual.surface`, message: 'Unsupported surface style.', severity: 'error' });
         const itemIds = new Set<string>();
         element.items?.forEach((item, itemIndex) => {
           if (!item.id?.trim()) issues.push({ path: `${elementBase}.items[${itemIndex}].id`, message: 'Every visible item needs a stable id.', severity: 'error' });

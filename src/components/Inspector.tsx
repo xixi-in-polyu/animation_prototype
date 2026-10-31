@@ -1,5 +1,6 @@
 import type { AnimationProject, ElementType, MotionCue, MotionPreset, Scene, SceneElement, SceneTemplate } from '../model/types';
 import { AMBIENT_PRESETS, BEAT_PRESETS, ENTER_PRESETS, EXIT_PRESETS } from '../model/motion';
+import { CAPTION_MODES, SURFACE_STYLES, VISUAL_VARIANTS, defaultVisualForType } from '../model/visual';
 
 interface Props {
   project: AnimationProject;
@@ -26,6 +27,7 @@ export function Inspector({ project, scene, element, selectedItemId, onUpdateSce
           <Field label="Template"><select value={scene.template} onChange={(event) => onUpdateScene({ template: event.target.value as SceneTemplate })}>{templates.map((item) => <option key={item}>{item}</option>)}</select></Field>
         </div>
         <Field label="Chapter"><select value={scene.chapterId} onChange={(event) => onUpdateScene({ chapterId: event.target.value })}>{project.chapters.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></Field>
+        <Field label="Caption layout"><select value={scene.captionMode} onChange={(event) => onUpdateScene({ captionMode: event.target.value as Scene['captionMode'] })}>{CAPTION_MODES.map((item) => <option key={item}>{item}</option>)}</select></Field>
         <div className="subheading"><small>SCENE TRANSITION</small><span>{scene.transitionOut ? `${scene.transitionOut.duration}s` : 'none'}</span></div>
         <div className="field-row">
           <Field label="Transition"><select value={scene.transitionOut?.preset ?? 'none'} onChange={(event) => onUpdateScene({ transitionOut: event.target.value === 'none' ? undefined : { preset: event.target.value as NonNullable<Scene['transitionOut']>['preset'], duration: scene.transitionOut?.duration ?? 0.6 } })}><option value="none">none</option><option value="fade">fade</option><option value="slide-left">slide-left</option><option value="slide-up">slide-up</option><option value="wipe">wipe</option></select></Field>
@@ -51,8 +53,12 @@ export function Inspector({ project, scene, element, selectedItemId, onUpdateSce
         <p className="inspector-help">This visible item is stored independently, so generated content can be selected, validated and repaired without replacing the whole component.</p>
       </> : <>
         <div className="field-row">
-          <Field label="Type"><select value={element.type} onChange={(event) => onUpdateElement({ type: event.target.value as ElementType })}>{elementTypes.map((item) => <option key={item}>{item}</option>)}</select></Field>
+          <Field label="Type"><select value={element.type} onChange={(event) => { const type = event.target.value as ElementType; onUpdateElement({ type, visual: defaultVisualForType(type) }); }}>{elementTypes.map((item) => <option key={item}>{item}</option>)}</select></Field>
           <Field label="Ambient"><select value={element.motion.ambient ?? 'none'} onChange={(event) => onUpdateElement({ motion: { ...element.motion, ambient: event.target.value as NonNullable<SceneElement['motion']['ambient']> } })}>{AMBIENT_PRESETS.map((item) => <option key={item}>{item}</option>)}</select></Field>
+        </div>
+        <div className="field-row">
+          <Field label="Visual grammar"><select value={element.visual.variant} onChange={(event) => onUpdateElement({ visual: { ...element.visual, variant: event.target.value as SceneElement['visual']['variant'] } })}>{VISUAL_VARIANTS.map((item) => <option key={item}>{item}</option>)}</select></Field>
+          <Field label="Surface"><select value={element.visual.surface} onChange={(event) => onUpdateElement({ visual: { ...element.visual, surface: event.target.value as SceneElement['visual']['surface'] } })}>{SURFACE_STYLES.map((item) => <option key={item}>{item}</option>)}</select></Field>
         </div>
         <Field label="Content"><textarea rows={5} value={element.content} onChange={(event) => onUpdateElement({ content: event.target.value })} /></Field>
         <Field label="Items — one per line"><textarea rows={6} value={(element.items ?? []).map((item) => item.label).join('\n')} onChange={(event) => {

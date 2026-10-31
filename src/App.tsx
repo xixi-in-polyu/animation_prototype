@@ -8,6 +8,7 @@ import { createDefaultMotion } from './model/motion';
 import { buildSceneTimeline, findSceneAtTime, framesToSeconds, getProjectDuration, getProjectDurationInFrames, secondsToFrames } from './model/timeline';
 import { migrateProject } from './model/migrate';
 import { projectValidator } from './model/validator';
+import { defaultCaptionForTemplate, defaultVisualForType } from './model/visual';
 import { Icon } from './components/Icon';
 import { Inspector } from './components/Inspector';
 import { PlayerControls } from './components/PlayerControls';
@@ -28,12 +29,13 @@ function freshScene(chapterId: string): Scene {
     narration,
     elements: [{
       id: `${id}-title`, type: 'title', content: 'NEW\nSCENE', x: 8, y: 12, width: 55, height: 28,
-      motion: createDefaultMotion(`${id}-title`, 'title', narration), sourcePages: [],
+      motion: createDefaultMotion(`${id}-title`, 'title', narration), visual: defaultVisualForType('title'), sourcePages: [],
     }, {
       id: `${id}-text`, type: 'text', content: 'Select an element to edit its content and layout.', x: 8, y: 50, width: 56, height: 18,
-      motion: createDefaultMotion(`${id}-text`, 'text', narration, { enter: 'fade', start: 2, duration: 1 }), sourcePages: [],
+      motion: createDefaultMotion(`${id}-text`, 'text', narration, { enter: 'fade', start: 2, duration: 1 }), visual: defaultVisualForType('text'), sourcePages: [],
     }],
     transitionOut: { preset: 'fade', duration: 0.6 },
+    captionMode: defaultCaptionForTemplate('concept'),
   };
 }
 
@@ -42,6 +44,13 @@ function normalizeTransitions(scenes: Scene[]): Scene[] {
     ...scene,
     transitionOut: index < scenes.length - 1 ? scene.transitionOut ?? { preset: 'fade', duration: 0.6 } : undefined,
   }));
+}
+
+function captionText(text: string, mode: Scene['captionMode']): string {
+  if (mode !== 'keywords') return text;
+  const firstThought = text.split(/[.!?;]/)[0].trim();
+  const words = firstThought.split(/\s+/).slice(0, 9);
+  return `${words.join(' ')}${firstThought.split(/\s+/).length > words.length ? '…' : ''}`;
 }
 
 export default function App() {
@@ -255,7 +264,7 @@ export default function App() {
             acknowledgeRemotionLicense
             style={{ width: '100%', height: '100%' }}
           />
-          {captionsEnabled && activeNarration && <div className="caption"><span>{activeNarration.text}</span></div>}
+          {captionsEnabled && activeNarration && activeScene.captionMode !== 'hidden' && <div className={`caption caption-${activeScene.captionMode}`}><span>{captionText(activeNarration.text, activeScene.captionMode)}</span></div>}
         </div>
         <ScriptPanel scene={activeScene} localTime={localTime} visible={scriptVisible} />
       </section>
