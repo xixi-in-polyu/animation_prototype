@@ -4,6 +4,7 @@ interface Props {
   project: AnimationProject;
   scene: Scene;
   element?: SceneElement;
+  selectedItemId?: string;
   onUpdateScene: (patch: Partial<Scene>) => void;
   onUpdateElement: (patch: Partial<SceneElement>) => void;
   onUpdateTheme: (key: keyof AnimationProject['theme'], value: string) => void;
@@ -12,9 +13,10 @@ interface Props {
 const templates: SceneTemplate[] = ['opening', 'concept', 'process', 'comparison', 'incident', 'architecture', 'closing'];
 const elementTypes: ElementType[] = ['title', 'text', 'cards', 'lifecycle', 'flow', 'comparison', 'timeline', 'metrics', 'topology', 'formula', 'badge'];
 
-export function Inspector({ project, scene, element, onUpdateScene, onUpdateElement, onUpdateTheme }: Props) {
+export function Inspector({ project, scene, element, selectedItemId, onUpdateScene, onUpdateElement, onUpdateTheme }: Props) {
+  const selectedItem = element?.items?.find((item) => item.id === selectedItemId);
   return <aside className="inspector panel">
-    <div className="panel-heading"><div><small>INSPECTOR</small><h2>{element ? 'Element' : 'Scene'}</h2></div><span>{element?.type ?? scene.template}</span></div>
+    <div className="panel-heading"><div><small>INSPECTOR</small><h2>{selectedItem ? 'Component item' : element ? 'Element' : 'Scene'}</h2></div><span>{selectedItem ? 'editable item' : element?.type ?? scene.template}</span></div>
     <div className="inspector-scroll">
       {!element ? <>
         <Field label="Scene title"><input value={scene.title} onChange={(event) => onUpdateScene({ title: event.target.value })} /></Field>
@@ -37,13 +39,20 @@ export function Inspector({ project, scene, element, onUpdateScene, onUpdateElem
           <ColorField label="Text" value={project.theme.foreground} onChange={(value) => onUpdateTheme('foreground', value)} />
           <ColorField label="Muted" value={project.theme.muted} onChange={(value) => onUpdateTheme('muted', value)} />
         </div>
+      </> : selectedItem ? <>
+        <Field label="Item text"><textarea autoFocus rows={5} value={selectedItem.label} onChange={(event) => onUpdateElement({ items: element.items?.map((item) => item.id === selectedItem.id ? { ...item, label: event.target.value } : item) })} /></Field>
+        <Field label="Stable item ID"><input value={selectedItem.id} readOnly /></Field>
+        <p className="inspector-help">This visible item is stored independently, so generated content can be selected, validated and repaired without replacing the whole component.</p>
       </> : <>
         <div className="field-row">
           <Field label="Type"><select value={element.type} onChange={(event) => onUpdateElement({ type: event.target.value as ElementType })}>{elementTypes.map((item) => <option key={item}>{item}</option>)}</select></Field>
           <Field label="Entry"><select value={element.animation.enter} onChange={(event) => onUpdateElement({ animation: { ...element.animation, enter: event.target.value as SceneElement['animation']['enter'] } })}><option>rise</option><option>fade</option><option>scale</option><option>draw</option></select></Field>
         </div>
         <Field label="Content"><textarea rows={5} value={element.content} onChange={(event) => onUpdateElement({ content: event.target.value })} /></Field>
-        <Field label="Items — one per line"><textarea rows={6} value={(element.items ?? []).join('\n')} onChange={(event) => onUpdateElement({ items: event.target.value.split('\n').filter(Boolean) })} /></Field>
+        <Field label="Items — one per line"><textarea rows={6} value={(element.items ?? []).map((item) => item.label).join('\n')} onChange={(event) => {
+          const labels = event.target.value.split('\n').filter((label) => label.trim());
+          onUpdateElement({ items: labels.map((label, index) => element.items?.[index] ?? { id: `${element.id}-item-${Date.now()}-${index + 1}`, label }).map((item, index) => ({ ...item, label: labels[index] })) });
+        }} /></Field>
         <div className="geometry-grid">
           {(['x', 'y', 'width', 'height'] as const).map((key) => <Field key={key} label={`${key.toUpperCase()} %`}><input type="number" min="0" max="100" value={element[key]} onChange={(event) => onUpdateElement({ [key]: Number(event.target.value) })} /></Field>)}
         </div>

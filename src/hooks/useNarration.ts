@@ -11,6 +11,10 @@ export function useNarration(
   onSegmentEnd?: (nextTime: number) => void,
 ) {
   const spokenRef = useRef<string>('');
+  const onSegmentEndRef = useRef(onSegmentEnd);
+  useEffect(() => {
+    onSegmentEndRef.current = onSegmentEnd;
+  }, [onSegmentEnd]);
   const active = useMemo(() => {
     const timing = findSceneAtTime(project, currentTime);
     const localTime = currentTime - timing.start;
@@ -37,9 +41,9 @@ export function useNarration(
     let disposed = false;
     let advanceTimer: number | undefined;
     utterance.onend = () => {
-      if (disposed || !onSegmentEnd) return;
+      if (disposed || !onSegmentEndRef.current) return;
       advanceTimer = window.setTimeout(() => {
-        if (!disposed) onSegmentEnd(active.globalEnd);
+        if (!disposed) onSegmentEndRef.current?.(active.globalEnd);
       }, 200);
     };
     spokenRef.current = `${active.key}:${rate}`;
@@ -49,7 +53,7 @@ export function useNarration(
       if (advanceTimer !== undefined) window.clearTimeout(advanceTimer);
       window.speechSynthesis.cancel();
     };
-  }, [active?.key, enabled, onSegmentEnd, playing, project.locale, rate]);
+  }, [active?.key, enabled, playing, project.locale, rate]);
 
   return active;
 }

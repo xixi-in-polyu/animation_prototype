@@ -20,6 +20,18 @@ export function getProjectDuration(project: AnimationProject): number {
   return project.scenes.reduce((total, scene) => total + scene.duration, 0);
 }
 
+export function secondsToFrames(seconds: number, fps: number): number {
+  return Math.max(0, Math.round(seconds * fps));
+}
+
+export function framesToSeconds(frames: number, fps: number): number {
+  return frames / fps;
+}
+
+export function getProjectDurationInFrames(project: AnimationProject): number {
+  return project.scenes.reduce((total, scene) => total + secondsToFrames(scene.duration, project.renderConfig.fps), 0);
+}
+
 export function findSceneAtTime(project: AnimationProject, time: number): SceneTiming {
   const timeline = buildSceneTimeline(project);
   const match = timeline.find((entry) => time >= entry.start && time < entry.end);

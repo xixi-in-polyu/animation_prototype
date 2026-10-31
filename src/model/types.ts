@@ -1,4 +1,10 @@
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 2;
+
+export interface RenderConfig {
+  fps: number;
+  width: number;
+  height: number;
+}
 
 export type ElementType =
   | 'title'
@@ -59,7 +65,7 @@ export interface SceneElement {
   id: string;
   type: ElementType;
   content: string;
-  items?: string[];
+  items?: SceneElementItem[];
   x: number;
   y: number;
   width: number;
@@ -75,6 +81,11 @@ export interface SceneElement {
     duration: number;
   };
   sourcePages?: number[];
+}
+
+export interface SceneElementItem {
+  id: string;
+  label: string;
 }
 
 export interface Scene {
@@ -120,6 +131,7 @@ export interface AnimationProject {
   title: string;
   description: string;
   locale: string;
+  renderConfig: RenderConfig;
   createdAt: string;
   updatedAt: string;
   sourceDocuments: SourceDocument[];
