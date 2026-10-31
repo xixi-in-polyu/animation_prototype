@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 4,
+  "id": "project-starter",
+  "title": "Animation title",
+  "description": "Replace this starter with the animation's through-line.",
+  "locale": "en-US",
+  "renderConfig": { "fps": 30, "width": 1920, "height": 1080 },
+  "createdAt": "2026-10-31T00:00:00.000Z",
+  "updatedAt": "2026-10-31T00:00:00.000Z",
+  "sourceDocuments": [],
+  "knowledgeNodes": [],
+  "chapters": [
+    { "id": "chapter-main", "title": "Main idea", "shortTitle": "Main", "color": "#9FAF91" }
+  ],
+  "scenes": [
+    {
+      "id": "scene-opening",
+      "chapterId": "chapter-main",
+      "title": "Opening claim",
+      "template": "opening",
+      "duration": 8,
+      "elements": [
+        {
+          "id": "scene-opening-title",
+          "type": "title",
+          "content": "ONE CLEAR\nIDEA",
+          "x": 7,
+          "y": 14,
+          "width": 56,
+          "height": 28,
+          "style": { "accent": "#9FAF91", "tone": "glass", "align": "left" },
+          "motion": {
+            "enter": {
+              "id": "scene-opening-title-enter",
+              "preset": "fade-rise",
+              "trigger": { "type": "time", "at": 0 },
+              "duration": 0.9,
+              "stagger": 0.08,
+              "intensity": 1
+            },
+            "beats": [
+              {
+                "id": "scene-opening-title-beat-1",
+                "preset": "pulse",
+                "trigger": { "type": "narration", "segmentId": "scene-opening-narration-1", "offset": 0.2 },
+                "duration": 0.9,
+                "intensity": 0.7
+              }
+            ],
+            "exit": {
+              "id": "scene-opening-title-exit",
+              "preset": "fade",
+              "trigger": { "type": "time", "at": 7.4 },
+              "duration": 0.5,
+              "intensity": 1
+            },
+            "ambient": "none"
+          },
+          "visual": { "variant": "minimal", "surface": "none" }
+        },
+        {
+          "id": "scene-opening-badge",
+          "type": "badge",
+          "content": "Replace with a memorable qualifier",
+          "x": 7,
+          "y": 48,
+          "width": 35,
+          "height": 9,
+          "style": { "accent": "#8EA6B4", "tone": "outline", "align": "center" },
+          "motion": {
+            "enter": {
+              "id": "scene-opening-badge-enter",
+              "preset": "fade-rise",
+              "trigger": { "type": "time", "at": 1.2 },
+              "duration": 0.8,
+              "intensity": 1
+            },
+            "beats": [],
+            "exit": {
+              "id": "scene-opening-badge-exit",
+              "preset": "fade",
+              "trigger": { "type": "time", "at": 7.4 },
+              "duration": 0.5,
+              "intensity": 1
+            },
+            "ambient": "breathe"
+          },
+          "visual": { "variant": "minimal", "surface": "outline" }
+        }
+      ],
+      "narration": [
+        {
+          "id": "scene-opening-narration-1",
+          "text": "Replace this line with a concise opening promise that the scene can resolve.",
+          "start": 0.6,
+          "end": 6.8
+        }
+      ],
+      "knowledgeNodeIds": [],
+      "captionMode": "keywords"
+    }
+  ],
+  "assets": [],
+  "theme": {
+    "name": "Morandi Paper",
+    "background": "#F4F1EB",
+    "surface": "#E7E1D8",
+    "foreground": "#303535",
+    "muted": "#737A78",
+    "accent": "#9FAF91",
+    "accentAlt": "#8EA6B4",
+    "fontFamily": "Inter, ui-sans-serif, system-ui, sans-serif"
+  }
+}

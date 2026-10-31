@@ -1,0 +1,4 @@
+interface:
+  display_name: "Animation Production"
+  short_description: "编排并验证 Storyline Studio 动画项目"
+  default_prompt: "Use $animation-production to turn my topic or script into a validated Storyline Studio animation project."
