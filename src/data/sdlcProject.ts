@@ -1,5 +1,6 @@
 import type { AnimationProject, ElementType, NarrationSegment, Scene, SceneElement, SceneTemplate } from '../model/types';
 import { CURRENT_SCHEMA_VERSION } from '../model/types';
+import { createDefaultMotion } from '../model/motion';
 
 const sourceId = 'source-sdlc-lecture';
 
@@ -25,6 +26,7 @@ const element = (
   start: number,
   pages: number[],
   accent?: string,
+  script: NarrationSegment[] = [],
 ): SceneElement => ({
   id,
   type,
@@ -35,7 +37,7 @@ const element = (
   width,
   height,
   style: { accent, tone: 'glass', align: type === 'title' ? 'left' : 'center' },
-  animation: { enter: type === 'flow' || type === 'timeline' ? 'draw' : 'rise', start, duration: 1.1 },
+  motion: createDefaultMotion(id, type, script, { enter: type === 'flow' || type === 'timeline' ? 'draw' : 'rise', start, duration: 1.1 }),
   sourcePages: pages,
 });
 
@@ -47,16 +49,24 @@ const scene = (
   knowledgeNodeIds: string[],
   elements: SceneElement[],
   script: string[],
-): Scene => ({
-  id,
-  chapterId,
-  title,
-  template,
-  duration: 65,
-  elements,
-  narration: narration(id, script),
-  knowledgeNodeIds,
-});
+): Scene => {
+  const narrationSegments = narration(id, script);
+  return {
+    id,
+    chapterId,
+    title,
+    template,
+    duration: 65,
+    elements: elements.map((item) => ({ ...item, motion: createDefaultMotion(item.id, item.type, narrationSegments, {
+      enter: item.motion.enter.preset === 'draw' ? 'draw' : item.motion.enter.preset === 'spring-scale' ? 'scale' : 'rise',
+      start: item.motion.enter.trigger.type === 'time' ? item.motion.enter.trigger.at : 0,
+      duration: item.motion.enter.duration,
+    }) })),
+    narration: narrationSegments,
+    knowledgeNodeIds,
+    transitionOut: { preset: 'fade', duration: 0.6 },
+  };
+};
 
 export const createSdlcProject = (): AnimationProject => ({
   schemaVersion: CURRENT_SCHEMA_VERSION,
@@ -225,7 +235,7 @@ export const createSdlcProject = (): AnimationProject => ({
       'After rollout, engineers watch reliability, latency, errors, and user outcomes. Production evidence closes the gap between the specification and the lived experience.',
       'The AI tutor began as a question, became a prototype, passed through architecture and tests, reached production, and generated new learning. That is why the lifecycle never really ends.',
     ]),
-  ],
+  ].map((item, index, all) => index === all.length - 1 ? { ...item, transitionOut: undefined } : item),
   assets: [],
   theme: {
     name: 'Morandi Paper',

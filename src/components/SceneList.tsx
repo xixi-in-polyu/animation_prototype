@@ -59,11 +59,29 @@ export function SceneList({ project, selectedSceneId, onSelect, onReorder, onAdd
 
 export function cloneScene(scene: Scene): Scene {
   const suffix = Math.random().toString(36).slice(2, 7);
+  const narrationIds = new Map(scene.narration.map((item) => [item.id, `${item.id}-${suffix}`]));
+  const cloneCue = (cue: Scene['elements'][number]['motion']['enter']) => ({
+    ...cue,
+    id: `${cue.id}-${suffix}`,
+    trigger: cue.trigger.type === 'narration'
+      ? { ...cue.trigger, segmentId: narrationIds.get(cue.trigger.segmentId) ?? cue.trigger.segmentId }
+      : { ...cue.trigger },
+  });
   return {
     ...structuredClone(scene),
     id: `${scene.id}-${suffix}`,
     title: `${scene.title} copy`,
-    elements: scene.elements.map((item) => ({ ...item, id: `${item.id}-${suffix}` })),
-    narration: scene.narration.map((item) => ({ ...item, id: `${item.id}-${suffix}` })),
+    elements: scene.elements.map((item) => ({
+      ...structuredClone(item),
+      id: `${item.id}-${suffix}`,
+      items: item.items?.map((subItem) => ({ ...subItem, id: `${subItem.id}-${suffix}` })),
+      motion: {
+        ...item.motion,
+        enter: cloneCue(item.motion.enter),
+        beats: item.motion.beats.map(cloneCue),
+        exit: item.motion.exit ? cloneCue(item.motion.exit) : undefined,
+      },
+    })),
+    narration: scene.narration.map((item) => ({ ...item, id: narrationIds.get(item.id)! })),
   };
 }

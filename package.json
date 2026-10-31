@@ -10,12 +10,12 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@remotion/layout-utils": "^4.0.539",
-    "@remotion/media": "^4.0.539",
-    "@remotion/player": "^4.0.539",
+    "@remotion/layout-utils": "4.0.539",
+    "@remotion/player": "4.0.539",
+    "@remotion/transitions": "4.0.539",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "remotion": "^4.0.539"
+    "remotion": "4.0.539"
   },
   "devDependencies": {
     "@types/react": "^19.1.10",
