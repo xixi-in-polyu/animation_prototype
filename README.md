@@ -21,6 +21,7 @@ Then open the local address shown by Vite. Chrome or Edge is recommended for nar
 - Versioned JSON import/export with validation and migration hooks.
 - A `GenerationAdapter` boundary for future PDF parsing and AI storyboard generation.
 - Independently editable component items with stable IDs, plus validation for empty or duplicate generated content.
+- Narration-driven motion cues, deterministic component choreography, ambient motion, and editable Remotion scene transitions.
 
 ## Project structure
 
@@ -31,5 +32,5 @@ Then open the local address shown by Vite. Chrome or Edge is recommended for nar
 
 ## Project file contract
 
-Exported `.json` files use `schemaVersion: 2`, including the frame rate and render dimensions. Schema v1 projects are migrated on import: string component items receive stable IDs and the default 30 FPS, 1920×1080 render configuration. Future generators should output an `AnimationProject` and pass `projectValidator` before loading. Unknown element types and newer schema versions are rejected instead of executing generated code.
+Exported `.json` files use `schemaVersion: 3`, including frame rate, render dimensions, scene transitions, and structured enter/beat/exit/ambient motion. Schema v1 and v2 projects are migrated on import: string component items receive stable IDs, legacy animations become narration-driven motion cues, and the default render configuration is 30 FPS at 1920×1080. Future generators should output an `AnimationProject` and pass `projectValidator` before loading. Unknown element or motion types and newer schema versions are rejected instead of executing generated code.
 # animation_prototype

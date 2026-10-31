@@ -1,4 +1,5 @@
-import type { AnimationProject, ElementType, Scene, SceneElement, SceneTemplate } from '../model/types';
+import type { AnimationProject, ElementType, MotionCue, MotionPreset, Scene, SceneElement, SceneTemplate } from '../model/types';
+import { AMBIENT_PRESETS, BEAT_PRESETS, ENTER_PRESETS, EXIT_PRESETS } from '../model/motion';
 
 interface Props {
   project: AnimationProject;
@@ -25,6 +26,11 @@ export function Inspector({ project, scene, element, selectedItemId, onUpdateSce
           <Field label="Template"><select value={scene.template} onChange={(event) => onUpdateScene({ template: event.target.value as SceneTemplate })}>{templates.map((item) => <option key={item}>{item}</option>)}</select></Field>
         </div>
         <Field label="Chapter"><select value={scene.chapterId} onChange={(event) => onUpdateScene({ chapterId: event.target.value })}>{project.chapters.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></Field>
+        <div className="subheading"><small>SCENE TRANSITION</small><span>{scene.transitionOut ? `${scene.transitionOut.duration}s` : 'none'}</span></div>
+        <div className="field-row">
+          <Field label="Transition"><select value={scene.transitionOut?.preset ?? 'none'} onChange={(event) => onUpdateScene({ transitionOut: event.target.value === 'none' ? undefined : { preset: event.target.value as NonNullable<Scene['transitionOut']>['preset'], duration: scene.transitionOut?.duration ?? 0.6 } })}><option value="none">none</option><option value="fade">fade</option><option value="slide-left">slide-left</option><option value="slide-up">slide-up</option><option value="wipe">wipe</option></select></Field>
+          <Field label="Duration"><input type="number" min=".1" max="3" step=".1" disabled={!scene.transitionOut} value={scene.transitionOut?.duration ?? 0.6} onChange={(event) => scene.transitionOut && onUpdateScene({ transitionOut: { ...scene.transitionOut, duration: Number(event.target.value) } })} /></Field>
+        </div>
         <hr />
         <div className="subheading"><small>NARRATION SCRIPT</small><span>{scene.narration.length} segments</span></div>
         {scene.narration.map((segment, index) => <div className="narration-editor" key={segment.id}>
@@ -46,7 +52,7 @@ export function Inspector({ project, scene, element, selectedItemId, onUpdateSce
       </> : <>
         <div className="field-row">
           <Field label="Type"><select value={element.type} onChange={(event) => onUpdateElement({ type: event.target.value as ElementType })}>{elementTypes.map((item) => <option key={item}>{item}</option>)}</select></Field>
-          <Field label="Entry"><select value={element.animation.enter} onChange={(event) => onUpdateElement({ animation: { ...element.animation, enter: event.target.value as SceneElement['animation']['enter'] } })}><option>rise</option><option>fade</option><option>scale</option><option>draw</option></select></Field>
+          <Field label="Ambient"><select value={element.motion.ambient ?? 'none'} onChange={(event) => onUpdateElement({ motion: { ...element.motion, ambient: event.target.value as NonNullable<SceneElement['motion']['ambient']> } })}>{AMBIENT_PRESETS.map((item) => <option key={item}>{item}</option>)}</select></Field>
         </div>
         <Field label="Content"><textarea rows={5} value={element.content} onChange={(event) => onUpdateElement({ content: event.target.value })} /></Field>
         <Field label="Items — one per line"><textarea rows={6} value={(element.items ?? []).map((item) => item.label).join('\n')} onChange={(event) => {
@@ -56,15 +62,42 @@ export function Inspector({ project, scene, element, selectedItemId, onUpdateSce
         <div className="geometry-grid">
           {(['x', 'y', 'width', 'height'] as const).map((key) => <Field key={key} label={`${key.toUpperCase()} %`}><input type="number" min="0" max="100" value={element[key]} onChange={(event) => onUpdateElement({ [key]: Number(event.target.value) })} /></Field>)}
         </div>
-        <div className="field-row">
-          <Field label="Start"><input type="number" min="0" step=".5" value={element.animation.start} onChange={(event) => onUpdateElement({ animation: { ...element.animation, start: Number(event.target.value) } })} /></Field>
-          <Field label="Speed"><input type="number" min=".1" max="5" step=".1" value={element.animation.duration} onChange={(event) => onUpdateElement({ animation: { ...element.animation, duration: Number(event.target.value) } })} /></Field>
-        </div>
+        <hr />
+        <div className="subheading"><small>MOTION · ENTER</small><span>{element.motion.enter.preset}</span></div>
+        <CueEditor cue={element.motion.enter} scene={scene} presets={ENTER_PRESETS} onChange={(enter) => onUpdateElement({ motion: { ...element.motion, enter } })} />
+        <div className="subheading"><small>NARRATION BEATS</small><button className="mini-action" onClick={() => {
+          const segment = scene.narration[element.motion.beats.length % Math.max(1, scene.narration.length)];
+          const cue: MotionCue = { id: `${element.id}-beat-${Date.now()}`, preset: 'pulse', trigger: segment ? { type: 'narration', segmentId: segment.id } : { type: 'time', at: 0 }, duration: 1, stagger: 0.1, intensity: 0.75 };
+          onUpdateElement({ motion: { ...element.motion, beats: [...element.motion.beats, cue] } });
+        }}>+ Add beat</button></div>
+        <div className="motion-cue-list">{element.motion.beats.map((cue, index) => <div className="motion-cue" key={cue.id}>
+          <div className="motion-cue-heading"><span>{String(index + 1).padStart(2, '0')} · {cue.preset}</span><div><button disabled={index === 0} onClick={() => { const beats = [...element.motion.beats]; [beats[index - 1], beats[index]] = [beats[index], beats[index - 1]]; onUpdateElement({ motion: { ...element.motion, beats } }); }}>↑</button><button disabled={index === element.motion.beats.length - 1} onClick={() => { const beats = [...element.motion.beats]; [beats[index], beats[index + 1]] = [beats[index + 1], beats[index]]; onUpdateElement({ motion: { ...element.motion, beats } }); }}>↓</button><button onClick={() => onUpdateElement({ motion: { ...element.motion, beats: [...element.motion.beats.slice(0, index + 1), { ...cue, id: `${cue.id}-copy-${Date.now()}` }, ...element.motion.beats.slice(index + 1)] } })}>⧉</button><button onClick={() => onUpdateElement({ motion: { ...element.motion, beats: element.motion.beats.filter((item) => item.id !== cue.id) } })}>×</button></div></div>
+          <CueEditor cue={cue} scene={scene} presets={BEAT_PRESETS} onChange={(next) => onUpdateElement({ motion: { ...element.motion, beats: element.motion.beats.map((item) => item.id === cue.id ? next : item) } })} />
+        </div>)}</div>
+        {element.motion.exit && <><div className="subheading"><small>MOTION · EXIT</small><span>{element.motion.exit.preset}</span></div><CueEditor cue={element.motion.exit} scene={scene} presets={EXIT_PRESETS} onChange={(exit) => onUpdateElement({ motion: { ...element.motion, exit } })} /></>}
         <ColorField label="Accent" value={element.style?.accent ?? project.theme.accent} onChange={(value) => onUpdateElement({ style: { ...element.style, accent: value } })} />
         <Field label="Source pages"><input value={(element.sourcePages ?? []).join(', ')} onChange={(event) => onUpdateElement({ sourcePages: event.target.value.split(',').map(Number).filter(Number.isFinite) })} /></Field>
       </>}
     </div>
   </aside>;
+}
+
+function CueEditor({ cue, scene, presets, onChange }: { cue: MotionCue; scene: Scene; presets: readonly MotionPreset[]; onChange: (cue: MotionCue) => void }) {
+  return <div className="cue-editor">
+    <div className="field-row">
+      <Field label="Preset"><select value={cue.preset} onChange={(event) => onChange({ ...cue, preset: event.target.value as MotionPreset })}>{presets.map((item) => <option key={item}>{item}</option>)}</select></Field>
+      <Field label="Trigger"><select value={cue.trigger.type} onChange={(event) => onChange({ ...cue, trigger: event.target.value === 'time' ? { type: 'time', at: 0 } : { type: 'narration', segmentId: scene.narration[0]?.id ?? '' } })}><option value="time">time</option><option value="narration">narration</option></select></Field>
+    </div>
+    {cue.trigger.type === 'narration' ? <div className="field-row">
+      <Field label="Narration"><select value={cue.trigger.segmentId} onChange={(event) => onChange({ ...cue, trigger: { type: 'narration', segmentId: event.target.value, offset: cue.trigger.type === 'narration' ? cue.trigger.offset : 0 } })}>{scene.narration.map((segment, index) => <option key={segment.id} value={segment.id}>{String(index + 1).padStart(2, '0')} · {segment.text.slice(0, 34)}</option>)}</select></Field>
+      <Field label="Offset"><input type="number" step=".1" value={cue.trigger.offset ?? 0} onChange={(event) => onChange({ ...cue, trigger: { type: 'narration', segmentId: cue.trigger.type === 'narration' ? cue.trigger.segmentId : scene.narration[0]?.id ?? '', offset: Number(event.target.value) } })} /></Field>
+    </div> : <Field label="Start time"><input type="number" min="0" max={scene.duration} step=".1" value={cue.trigger.at} onChange={(event) => onChange({ ...cue, trigger: { type: 'time', at: Number(event.target.value) } })} /></Field>}
+    <div className="motion-number-grid">
+      <Field label="Duration"><input type="number" min=".1" max="8" step=".1" value={cue.duration} onChange={(event) => onChange({ ...cue, duration: Number(event.target.value) })} /></Field>
+      <Field label="Stagger"><input type="number" min="0" max="2" step=".05" value={cue.stagger ?? 0} onChange={(event) => onChange({ ...cue, stagger: Number(event.target.value) })} /></Field>
+      <Field label="Intensity"><input type="number" min="0" max="2" step=".05" value={cue.intensity ?? 1} onChange={(event) => onChange({ ...cue, intensity: Number(event.target.value) })} /></Field>
+    </div>
+  </div>;
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {

@@ -1,4 +1,5 @@
 import { CURRENT_SCHEMA_VERSION, type AnimationProject, type ProjectValidator, type ValidationIssue } from './types';
+import { AMBIENT_PRESETS, BEAT_PRESETS, ENTER_PRESETS, EXIT_PRESETS, MOTION_PRESETS, resolveCueStart } from './motion';
 
 const supportedElements = new Set([
   'title', 'text', 'cards', 'lifecycle', 'flow', 'comparison', 'timeline',
@@ -35,6 +36,10 @@ export const projectValidator: ProjectValidator = {
       if (!scene.id) issues.push({ path: `${base}.id`, message: 'Scene id is required.', severity: 'error' });
       if (!chapterIds.has(scene.chapterId)) issues.push({ path: `${base}.chapterId`, message: 'Scene references an unknown chapter.', severity: 'error' });
       if (!Number.isFinite(scene.duration) || scene.duration <= 0) issues.push({ path: `${base}.duration`, message: 'Duration must be greater than zero.', severity: 'error' });
+      if (scene.transitionOut) {
+        if (!['fade', 'slide-left', 'slide-up', 'wipe'].includes(scene.transitionOut.preset)) issues.push({ path: `${base}.transitionOut.preset`, message: 'Unsupported scene transition preset.', severity: 'error' });
+        if (!Number.isFinite(scene.transitionOut.duration) || scene.transitionOut.duration <= 0 || scene.transitionOut.duration >= scene.duration) issues.push({ path: `${base}.transitionOut.duration`, message: 'Transition duration must be positive and shorter than the scene.', severity: 'error' });
+      }
       scene.elements?.forEach((element, elementIndex) => {
         const elementBase = `${base}.elements[${elementIndex}]`;
         if (!supportedElements.has(element.type)) issues.push({ path: `${base}.elements[${elementIndex}].type`, message: `Unsupported element type: ${element.type}.`, severity: 'error' });
@@ -49,6 +54,28 @@ export const projectValidator: ProjectValidator = {
         });
         if (element.type === 'flow' && (element.items?.length ?? 0) > 9) {
           issues.push({ path: `${elementBase}.items`, message: 'Flow supports at most 9 readable steps; split this content into multiple scenes.', severity: 'warning' });
+        }
+        if (!element.motion?.enter || !Array.isArray(element.motion?.beats)) {
+          issues.push({ path: `${elementBase}.motion`, message: 'Element motion configuration is required.', severity: 'error' });
+        } else {
+          const cues = [element.motion.enter, ...element.motion.beats, ...(element.motion.exit ? [element.motion.exit] : [])];
+          const cueIds = new Set<string>();
+          cues.forEach((cue, cueIndex) => {
+            const cuePath = `${elementBase}.motion.cues[${cueIndex}]`;
+            if (!cue.id?.trim() || cueIds.has(cue.id)) issues.push({ path: `${cuePath}.id`, message: 'Motion cue IDs must be present and unique.', severity: 'error' });
+            cueIds.add(cue.id);
+            if (!MOTION_PRESETS.includes(cue.preset)) issues.push({ path: `${cuePath}.preset`, message: `Unsupported motion preset: ${cue.preset}.`, severity: 'error' });
+            if (!Number.isFinite(cue.duration) || cue.duration <= 0) issues.push({ path: `${cuePath}.duration`, message: 'Motion duration must be greater than zero.', severity: 'error' });
+            const start = resolveCueStart(cue, scene);
+            if (start === undefined) issues.push({ path: `${cuePath}.trigger`, message: 'Motion references an unknown narration segment.', severity: 'error' });
+            else if (start < 0 || start + cue.duration > scene.duration + 0.001) issues.push({ path: cuePath, message: 'Motion cue extends outside the scene.', severity: 'error' });
+          });
+          if (!ENTER_PRESETS.includes(element.motion.enter.preset as typeof ENTER_PRESETS[number])) issues.push({ path: `${elementBase}.motion.enter.preset`, message: 'Enter cue must use an enter preset.', severity: 'error' });
+          element.motion.beats.forEach((cue, cueIndex) => {
+            if (!BEAT_PRESETS.includes(cue.preset as typeof BEAT_PRESETS[number])) issues.push({ path: `${elementBase}.motion.beats[${cueIndex}].preset`, message: 'Beat cue must use an emphasis preset.', severity: 'error' });
+          });
+          if (element.motion.exit && !EXIT_PRESETS.includes(element.motion.exit.preset as typeof EXIT_PRESETS[number])) issues.push({ path: `${elementBase}.motion.exit.preset`, message: 'Exit cue must use an exit preset.', severity: 'error' });
+          if (!AMBIENT_PRESETS.includes(element.motion.ambient ?? 'none')) issues.push({ path: `${elementBase}.motion.ambient`, message: 'Unsupported ambient motion.', severity: 'error' });
         }
         if (element.x < 0 || element.y < 0 || element.x + element.width > 100 || element.y + element.height > 100) {
           issues.push({ path: `${base}.elements[${elementIndex}]`, message: 'Element extends outside the 16:9 canvas.', severity: 'warning' });

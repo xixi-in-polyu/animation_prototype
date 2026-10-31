@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
-import type { AnimationProject } from '../model/types';
+import type { AnimationProject, SceneElement } from '../model/types';
 import { buildSceneTimeline, formatTime, getProjectDuration } from '../model/timeline';
+import { resolveCueStart } from '../model/motion';
 import { Icon } from './Icon';
 
 interface Props {
@@ -10,6 +11,8 @@ interface Props {
   narrationEnabled: boolean;
   captionsEnabled: boolean;
   rate: number;
+  selectedSceneId?: string;
+  selectedElement?: SceneElement;
   onSeek: (time: number) => void;
   onPlayingChange: (value: boolean) => void;
   onNarrationChange: (value: boolean) => void;
@@ -20,6 +23,13 @@ interface Props {
 export function PlayerControls(props: Props) {
   const total = getProjectDuration(props.project);
   const timeline = buildSceneTimeline(props.project);
+  const selectedTiming = timeline.find((item) => item.scene.id === props.selectedSceneId);
+  const cues = props.selectedElement && selectedTiming
+    ? [props.selectedElement.motion.enter, ...props.selectedElement.motion.beats, ...(props.selectedElement.motion.exit ? [props.selectedElement.motion.exit] : [])].flatMap((cue) => {
+      const local = resolveCueStart(cue, selectedTiming.scene);
+      return local === undefined ? [] : [{ cue, time: selectedTiming.start + local }];
+    })
+    : [];
   return <div className="player-controls panel">
     <div className="timeline-wrap">
       <div className="timeline-chapters">{props.project.chapters.map((chapter) => {
@@ -27,6 +37,7 @@ export function PlayerControls(props: Props) {
         if (!first) return null;
         return <button key={chapter.id} style={{ left: `${(first.start / total) * 100}%`, '--marker-color': chapter.color } as CSSProperties} title={chapter.title} onClick={() => props.onSeek(first.start)}><i /><span>{chapter.shortTitle}</span></button>;
       })}</div>
+      <div className="timeline-cues">{cues.map(({ cue, time }) => <button key={cue.id} title={`${cue.preset} · ${time.toFixed(1)}s`} style={{ left: `${(time / total) * 100}%` } as CSSProperties} onClick={() => props.onSeek(time)}><i /></button>)}</div>
       <input aria-label="Animation timeline" className="timeline-range" type="range" min="0" max={total} step=".1" value={Math.min(props.currentTime, total)} onChange={(event) => props.onSeek(Number(event.target.value))} style={{ '--progress': `${(props.currentTime / total) * 100}%` } as CSSProperties} />
     </div>
     <div className="transport">

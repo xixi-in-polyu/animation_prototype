@@ -1,4 +1,5 @@
 import { CURRENT_SCHEMA_VERSION, type AnimationProject } from './types';
+import { createDefaultMotion } from './motion';
 import { assertValidProject } from './validator';
 
 export function migrateProject(input: unknown): AnimationProject {
@@ -21,6 +22,20 @@ export function migrateProject(input: unknown): AnimationProject {
       });
     });
     candidate.schemaVersion = 2;
+  }
+  if (candidate.schemaVersion === 2) {
+    const scenes = Array.isArray(candidate.scenes) ? candidate.scenes as Array<Record<string, unknown>> : [];
+    scenes.forEach((scene, sceneIndex) => {
+      const narration = Array.isArray(scene.narration) ? scene.narration as AnimationProject['scenes'][number]['narration'] : [];
+      const elements = Array.isArray(scene.elements) ? scene.elements as Array<Record<string, unknown>> : [];
+      elements.forEach((element) => {
+        const legacy = element.animation as { enter: 'fade' | 'rise' | 'scale' | 'draw'; start: number; duration: number } | undefined;
+        element.motion = createDefaultMotion(String(element.id), element.type as AnimationProject['scenes'][number]['elements'][number]['type'], narration, legacy);
+        delete element.animation;
+      });
+      scene.transitionOut = sceneIndex < scenes.length - 1 ? { preset: 'fade', duration: 0.6 } : undefined;
+    });
+    candidate.schemaVersion = 3;
   }
   assertValidProject(candidate);
   return candidate;

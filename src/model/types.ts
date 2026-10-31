@@ -1,4 +1,46 @@
-export const CURRENT_SCHEMA_VERSION = 2;
+export const CURRENT_SCHEMA_VERSION = 3;
+
+export type MotionPreset =
+  | 'fade-rise'
+  | 'spring-scale'
+  | 'wipe-reveal'
+  | 'draw'
+  | 'pulse'
+  | 'lift'
+  | 'focus'
+  | 'glow'
+  | 'trace'
+  | 'count-up'
+  | 'fade'
+  | 'slide'
+  | 'shrink';
+
+export type AmbientMotion = 'none' | 'drift' | 'breathe' | 'orbit';
+
+export type MotionTrigger =
+  | { type: 'time'; at: number }
+  | { type: 'narration'; segmentId: string; offset?: number };
+
+export interface MotionCue {
+  id: string;
+  preset: MotionPreset;
+  trigger: MotionTrigger;
+  duration: number;
+  stagger?: number;
+  intensity?: number;
+}
+
+export interface ElementMotion {
+  enter: MotionCue;
+  beats: MotionCue[];
+  exit?: MotionCue;
+  ambient?: AmbientMotion;
+}
+
+export interface SceneTransition {
+  preset: 'fade' | 'slide-left' | 'slide-up' | 'wipe';
+  duration: number;
+}
 
 export interface RenderConfig {
   fps: number;
@@ -75,11 +117,7 @@ export interface SceneElement {
     tone?: 'light' | 'dark' | 'glass' | 'outline';
     align?: 'left' | 'center' | 'right';
   };
-  animation: {
-    enter: 'fade' | 'rise' | 'scale' | 'draw';
-    start: number;
-    duration: number;
-  };
+  motion: ElementMotion;
   sourcePages?: number[];
 }
 
@@ -97,6 +135,7 @@ export interface Scene {
   elements: SceneElement[];
   narration: NarrationSegment[];
   knowledgeNodeIds: string[];
+  transitionOut?: SceneTransition;
 }
 
 export interface Chapter {
