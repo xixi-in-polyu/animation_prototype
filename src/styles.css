@@ -146,6 +146,22 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .caption-keywords { left: 7%; right: auto; bottom: 8%; width: 72%; text-align: left; }
 .caption-keywords span { max-width: 100%; background: rgba(251,249,245,.82); border: 0; border-left: .28em solid #9faf91; box-shadow: none; padding: .45em .75em; color: #505956; font: 500 clamp(10px, 1.02vw, 15px) DM Mono, monospace; letter-spacing: .015em; }
 
+/* Readability floor for projected and scaled-down canvas previews. */
+.scene-footer { font-size: 1cqw; }
+.flow-label { font-size: 1.08cqw; }
+.flow-unit span { font-size: .98cqw; }
+.flow-unit b, .visual-flow.is-dense .flow-unit b { font-size: 1.28cqw; line-height: 1.22; font-weight: 650; }
+.visual-card span { font-size: .92cqw; }
+.visual-card p { font-size: 1.26cqw; line-height: 1.3; }
+.cycle-core small { font-size: .88cqw; }
+.cycle-node span { font-size: 1.16cqw; line-height: 1.2; }
+.comparison-label, .metrics-label, .topology-label { font-size: .94cqw; }
+.visual-comparison p { font-size: 1.14cqw; line-height: 1.36; }
+.visual-timeline b { font-size: 1.2cqw; line-height: 1.25; font-weight: 600; }
+.visual-metrics span { font-size: .94cqw; line-height: 1.25; }
+.visual-topology b { font-size: 1.22cqw; line-height: 1.25; font-weight: 600; }
+.visual-formula small { font-size: 1.02cqw; }
+
 /* The editor chrome can switch independently from the animation project theme. */
 .ui-light { color-scheme: light; background: #eef1f4; color: #171b20; }
 .ui-light .topbar { background: rgba(250,251,252,.96); border-bottom-color: #d8dde3; }
