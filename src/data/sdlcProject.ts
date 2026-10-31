@@ -1,4 +1,5 @@
 import type { AnimationProject, ElementType, NarrationSegment, Scene, SceneElement, SceneTemplate } from '../model/types';
+import { CURRENT_SCHEMA_VERSION } from '../model/types';
 
 const sourceId = 'source-sdlc-lecture';
 
@@ -28,7 +29,7 @@ const element = (
   id,
   type,
   content,
-  items,
+  items: items?.map((label, index) => ({ id: `${id}-item-${index + 1}`, label })),
   x,
   y,
   width,
@@ -58,11 +59,12 @@ const scene = (
 });
 
 export const createSdlcProject = (): AnimationProject => ({
-  schemaVersion: 1,
+  schemaVersion: CURRENT_SCHEMA_VERSION,
   id: 'project-sdlc-story',
   title: 'From Idea to Impact',
   description: 'An editable visual journey through the software development lifecycle.',
   locale: 'en-US',
+  renderConfig: { fps: 30, width: 1920, height: 1080 },
   createdAt: '2026-10-31T00:00:00.000Z',
   updatedAt: '2026-10-31T00:00:00.000Z',
   sourceDocuments: [{

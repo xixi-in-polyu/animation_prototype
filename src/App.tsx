@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Player, type PlayerRef } from '@remotion/player';
 import { createSdlcProject } from './data/sdlcProject';
 import { useHistory } from './hooks/useHistory';
 import { useNarration } from './hooks/useNarration';
 import type { AnimationProject, Scene, SceneElement } from './model/types';
-import { buildSceneTimeline, findSceneAtTime, getProjectDuration } from './model/timeline';
+import { buildSceneTimeline, findSceneAtTime, framesToSeconds, getProjectDuration, getProjectDurationInFrames, secondsToFrames } from './model/timeline';
 import { migrateProject } from './model/migrate';
 import { projectValidator } from './model/validator';
 import { Icon } from './components/Icon';
 import { Inspector } from './components/Inspector';
 import { PlayerControls } from './components/PlayerControls';
-import { SceneRenderer } from './components/SceneRenderer';
+import { RemotionProject } from './components/RemotionProject';
 import { SceneList, cloneScene } from './components/SceneList';
 import { ScriptPanel } from './components/ScriptPanel';
 
@@ -41,6 +42,7 @@ export default function App() {
   const [uiTheme, setUiTheme] = useState<'dark' | 'light'>(() => localStorage.getItem('storyline-ui-theme') === 'light' ? 'light' : 'dark');
   const [selectedSceneId, setSelectedSceneId] = useState(project.scenes[0].id);
   const [selectedElementId, setSelectedElementId] = useState('');
+  const [selectedItemId, setSelectedItemId] = useState('');
   const [currentTime, setCurrentTime] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [narrationEnabled, setNarrationEnabled] = useState(true);
@@ -49,8 +51,7 @@ export default function App() {
   const [rate, setRate] = useState(1);
   const [toast, setToast] = useState<string>();
   const fileInput = useRef<HTMLInputElement>(null);
-  const frame = useRef<number | undefined>(undefined);
-  const lastTick = useRef<number | undefined>(undefined);
+  const playerRef = useRef<PlayerRef>(null);
 
   const total = getProjectDuration(project);
   const activeTiming = findSceneAtTime(project, Math.min(currentTime, Math.max(0, total - .001)));
@@ -58,9 +59,17 @@ export default function App() {
   const localTime = currentTime - activeTiming.start;
   const selectedScene = project.scenes.find((item) => item.id === selectedSceneId) ?? activeScene;
   const selectedElement = selectedScene.elements.find((item) => item.id === selectedElementId);
+  const fps = project.renderConfig.fps;
+  const durationInFrames = getProjectDurationInFrames(project);
+  const seekToTime = useCallback((time: number) => {
+    const next = Math.min(total, Math.max(0, time));
+    playerRef.current?.seekTo(Math.min(durationInFrames - 1, secondsToFrames(next, fps)));
+    setCurrentTime(next);
+  }, [durationInFrames, fps, total]);
   const skipNarrationGap = useCallback((nextTime: number) => {
-    setCurrentTime((value) => Math.min(total, Math.max(value, nextTime + .02)));
-  }, [total]);
+    const playerTime = playerRef.current ? framesToSeconds(playerRef.current.getCurrentFrame(), fps) : nextTime;
+    seekToTime(Math.max(playerTime, nextTime + .02));
+  }, [fps, seekToTime]);
   const activeNarration = useNarration(project, currentTime, playing, narrationEnabled, rate, skipNarrationGap);
 
   const notify = useCallback((message: string) => {
@@ -73,48 +82,46 @@ export default function App() {
   }, [uiTheme]);
 
   useEffect(() => {
-    if (!playing) {
-      lastTick.current = undefined;
-      if (frame.current !== undefined) cancelAnimationFrame(frame.current);
-      return;
-    }
-    const tick = (timestamp: number) => {
-      if (lastTick.current !== undefined) {
-        const delta = (timestamp - lastTick.current) / 1000;
-        setCurrentTime((value) => {
-          const next = value + delta;
-          if (next >= total) {
-            setPlaying(false);
-            return total;
-          }
-          return next;
-        });
-      }
-      lastTick.current = timestamp;
-      frame.current = requestAnimationFrame(tick);
-    };
-    frame.current = requestAnimationFrame(tick);
+    const player = playerRef.current;
+    if (!player) return;
+    const onFrame = (event: { detail: { frame: number } }) => setCurrentTime(framesToSeconds(event.detail.frame, fps));
+    const onPlay = () => setPlaying(true);
+    const onPause = () => setPlaying(false);
+    const onEnded = () => { setPlaying(false); setCurrentTime(total); };
+    player.addEventListener('frameupdate', onFrame);
+    player.addEventListener('play', onPlay);
+    player.addEventListener('pause', onPause);
+    player.addEventListener('ended', onEnded);
     return () => {
-      if (frame.current !== undefined) cancelAnimationFrame(frame.current);
+      player.removeEventListener('frameupdate', onFrame);
+      player.removeEventListener('play', onPlay);
+      player.removeEventListener('pause', onPause);
+      player.removeEventListener('ended', onEnded);
     };
-  }, [playing, total]);
+  }, [durationInFrames, fps, total]);
+
+  const setPlayback = useCallback((value: boolean) => {
+    if (value) playerRef.current?.play();
+    else playerRef.current?.pause();
+    setPlaying(value);
+  }, []);
 
   useEffect(() => {
     setSelectedSceneId(activeScene.id);
-    if (selectedSceneId !== activeScene.id) setSelectedElementId('');
+    if (selectedSceneId !== activeScene.id) { setSelectedElementId(''); setSelectedItemId(''); }
   }, [activeScene.id]);
 
   useEffect(() => {
     const keydown = (event: KeyboardEvent) => {
       if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement) return;
-      if (event.code === 'Space') { event.preventDefault(); setPlaying((value) => !value); }
-      if (event.code === 'ArrowRight') setCurrentTime((value) => Math.min(total, value + 5));
-      if (event.code === 'ArrowLeft') setCurrentTime((value) => Math.max(0, value - 5));
+      if (event.code === 'Space') { event.preventDefault(); setPlayback(!playerRef.current?.isPlaying()); }
+      if (event.code === 'ArrowRight') seekToTime(currentTime + 5);
+      if (event.code === 'ArrowLeft') seekToTime(currentTime - 5);
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); event.shiftKey ? history.redo() : history.undo(); }
     };
     window.addEventListener('keydown', keydown);
     return () => window.removeEventListener('keydown', keydown);
-  }, [history.undo, history.redo, total]);
+  }, [currentTime, history.undo, history.redo, seekToTime, setPlayback]);
 
   const commit = (updater: (current: AnimationProject) => AnimationProject) => history.commit((current) => ({ ...updater(current), updatedAt: new Date().toISOString() }));
 
@@ -123,8 +130,9 @@ export default function App() {
     if (!timing) return;
     setSelectedSceneId(id);
     setSelectedElementId('');
-    setCurrentTime(timing.start + .01);
-    setPlaying(false);
+    setSelectedItemId('');
+    seekToTime(timing.start + .01);
+    setPlayback(false);
   };
 
   const updateScene = (patch: Partial<Scene>) => commit((current) => ({ ...current, scenes: current.scenes.map((item) => item.id === selectedScene.id ? { ...item, ...patch } : item) }));
@@ -177,8 +185,9 @@ export default function App() {
       history.replace(loaded);
       setSelectedSceneId(loaded.scenes[0].id);
       setSelectedElementId('');
-      setCurrentTime(0);
-      setPlaying(false);
+      setSelectedItemId('');
+      seekToTime(0);
+      setPlayback(false);
       notify('Project imported');
     } catch (error) {
       notify(error instanceof Error ? error.message.split('\n')[0] : 'Import failed');
@@ -189,8 +198,9 @@ export default function App() {
     history.replace(createSdlcProject());
     setSelectedSceneId('scene-01');
     setSelectedElementId('');
-    setCurrentTime(0);
-    setPlaying(false);
+    setSelectedItemId('');
+    seekToTime(0);
+    setPlayback(false);
     notify('Example restored');
   };
 
@@ -203,7 +213,7 @@ export default function App() {
       <div className="top-actions">
         <div className="undo-group"><button title="Undo" disabled={!history.canUndo} onClick={history.undo}><Icon name="undo" /></button><button title="Redo" disabled={!history.canRedo} onClick={history.redo}><Icon name="redo" /></button></div>
         <button className="theme-toggle" title={`Switch to ${uiTheme === 'dark' ? 'light' : 'dark'} interface`} aria-label={`Switch to ${uiTheme === 'dark' ? 'light' : 'dark'} interface`} onClick={() => setUiTheme((value) => value === 'dark' ? 'light' : 'dark')}><Icon name={uiTheme === 'dark' ? 'sun' : 'moon'} /><span>{uiTheme === 'dark' ? 'Light' : 'Dark'}</span></button>
-        <div className="mode-switch"><button className={mode === 'edit' ? 'active' : ''} onClick={() => setMode('edit')}><Icon name="edit" />Edit</button><button className={mode === 'preview' ? 'active' : ''} onClick={() => { setMode('preview'); setSelectedElementId(''); }}><Icon name="preview" />Preview</button></div>
+        <div className="mode-switch"><button className={mode === 'edit' ? 'active' : ''} onClick={() => setMode('edit')}><Icon name="edit" />Edit</button><button className={mode === 'preview' ? 'active' : ''} onClick={() => { setMode('preview'); setSelectedElementId(''); setSelectedItemId(''); }}><Icon name="preview" />Preview</button></div>
         <button className="text-action" onClick={() => fileInput.current?.click()}><Icon name="upload" />Import</button>
         <button className="primary-action" onClick={exportProject}><Icon name="download" />Export project</button>
         <input ref={fileInput} hidden type="file" accept="application/json,.json" onChange={(event) => importProject(event.target.files?.[0])} />
@@ -215,15 +225,31 @@ export default function App() {
       <section className="stage-area">
         <div className="stage-heading"><div><small>CANVAS · 16:9</small><b>{activeScene.title}</b></div><div className="stage-tools"><span className={warnings.some((item) => item.severity === 'error') ? 'has-errors' : ''}>{warnings.length ? `${warnings.length} project notes` : 'Project valid'}</span><button onClick={() => setScriptVisible((value) => !value)}>{scriptVisible ? 'Hide' : 'Show'} script</button><button onClick={reset}>Restore example</button></div></div>
         <div className="canvas-frame">
-          <SceneRenderer project={project} sceneId={activeScene.id} localTime={localTime} selectedElementId={selectedElementId} editable={mode === 'edit'} onSelectElement={setSelectedElementId} />
+          <Player
+            key={`${fps}-${durationInFrames}`}
+            ref={playerRef}
+            className="remotion-player"
+            component={RemotionProject}
+            inputProps={{ project, editable: mode === 'edit', selectedElementId, selectedItemId, onSelectElement: (elementId: string, itemId?: string) => { setSelectedElementId(elementId); setSelectedItemId(itemId ?? ''); } }}
+            durationInFrames={durationInFrames}
+            fps={fps}
+            compositionWidth={project.renderConfig.width}
+            compositionHeight={project.renderConfig.height}
+            playbackRate={rate}
+            controls={false}
+            clickToPlay={false}
+            spaceKeyToPlayOrPause={false}
+            acknowledgeRemotionLicense
+            style={{ width: '100%', height: '100%' }}
+          />
           {captionsEnabled && activeNarration && <div className="caption"><span>{activeNarration.text}</span></div>}
         </div>
         <ScriptPanel scene={activeScene} localTime={localTime} visible={scriptVisible} />
       </section>
-      {mode === 'edit' && <Inspector project={project} scene={selectedScene} element={selectedElement} onUpdateScene={updateScene} onUpdateElement={updateElement} onUpdateTheme={(key, value) => commit((current) => ({ ...current, theme: { ...current.theme, [key]: value } }))} />}
+      {mode === 'edit' && <Inspector project={project} scene={selectedScene} element={selectedElement} selectedItemId={selectedItemId} onUpdateScene={updateScene} onUpdateElement={updateElement} onUpdateTheme={(key, value) => commit((current) => ({ ...current, theme: { ...current.theme, [key]: value } }))} />}
     </main>
 
-    <PlayerControls project={project} currentTime={currentTime} playing={playing} narrationEnabled={narrationEnabled} captionsEnabled={captionsEnabled} rate={rate} onSeek={(time) => { setCurrentTime(time); setPlaying(false); }} onPlayingChange={setPlaying} onNarrationChange={setNarrationEnabled} onCaptionsChange={setCaptionsEnabled} onRateChange={setRate} />
+    <PlayerControls project={project} currentTime={currentTime} playing={playing} narrationEnabled={narrationEnabled} captionsEnabled={captionsEnabled} rate={rate} onSeek={(time) => { seekToTime(time); setPlayback(false); }} onPlayingChange={setPlayback} onNarrationChange={setNarrationEnabled} onCaptionsChange={setCaptionsEnabled} onRateChange={setRate} />
     {toast && <div className="toast">{toast}</div>}
   </div>;
 }
