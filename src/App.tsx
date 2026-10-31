@@ -46,13 +46,6 @@ function normalizeTransitions(scenes: Scene[]): Scene[] {
   }));
 }
 
-function captionText(text: string, mode: Scene['captionMode']): string {
-  if (mode !== 'keywords') return text;
-  const firstThought = text.split(/[.!?;]/)[0].trim();
-  const words = firstThought.split(/\s+/).slice(0, 9);
-  return `${words.join(' ')}${firstThought.split(/\s+/).length > words.length ? '…' : ''}`;
-}
-
 export default function App() {
   const original = useMemo(() => createSdlcProject(), []);
   const history = useHistory<AnimationProject>(original);
@@ -264,7 +257,7 @@ export default function App() {
             acknowledgeRemotionLicense
             style={{ width: '100%', height: '100%' }}
           />
-          {captionsEnabled && activeNarration && activeScene.captionMode !== 'hidden' && <div className={`caption caption-${activeScene.captionMode}`}><span>{captionText(activeNarration.text, activeScene.captionMode)}</span></div>}
+          {captionsEnabled && activeNarration && activeScene.captionMode !== 'hidden' && <div className={`caption caption-${activeScene.captionMode}`}><span>{activeNarration.text}</span></div>}
         </div>
         <ScriptPanel scene={activeScene} localTime={localTime} visible={scriptVisible} />
       </section>

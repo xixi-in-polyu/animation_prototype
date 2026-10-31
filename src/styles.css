@@ -141,10 +141,10 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .surface-soft .visual-card { background: color-mix(in srgb, var(--element-accent) 10%, rgba(255,255,255,.72)); }
 .variant-minimal :is(.visual-card, .flow-unit, .visual-comparison > div, .visual-metrics div, .visual-topology > div) { background: transparent; box-shadow: none; }
 
-.caption-side { left: auto; right: 4%; bottom: 11%; width: 30%; text-align: left; }
+.caption-side { left: auto; right: 4%; bottom: 9%; width: 34%; text-align: left; }
 .caption-side span { max-width: 100%; border-left: .3em solid #9faf91; }
-.caption-keywords { left: 7%; right: auto; bottom: 9%; width: 46%; text-align: left; }
-.caption-keywords span { background: transparent; border: 0; box-shadow: none; padding: 0; color: #505956; font: 600 clamp(11px, 1.18vw, 17px) DM Mono, monospace; letter-spacing: .04em; text-transform: uppercase; }
+.caption-keywords { left: 7%; right: auto; bottom: 8%; width: 72%; text-align: left; }
+.caption-keywords span { max-width: 100%; background: rgba(251,249,245,.82); border: 0; border-left: .28em solid #9faf91; box-shadow: none; padding: .45em .75em; color: #505956; font: 500 clamp(10px, 1.02vw, 15px) DM Mono, monospace; letter-spacing: .015em; }
 
 /* The editor chrome can switch independently from the animation project theme. */
 .ui-light { color-scheme: light; background: #eef1f4; color: #171b20; }
