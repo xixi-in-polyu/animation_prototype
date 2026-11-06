@@ -49,6 +49,13 @@ export function migrateProject(input: unknown): AnimationProject {
     });
     candidate.schemaVersion = 4;
   }
+  if (candidate.schemaVersion === 4) {
+    const sourceDocuments = Array.isArray(candidate.sourceDocuments) ? candidate.sourceDocuments as Array<Record<string, unknown>> : [];
+    sourceDocuments.forEach((document) => {
+      if (document.mimeType === undefined) document.mimeType = 'application/pdf';
+    });
+    candidate.schemaVersion = 5;
+  }
   assertValidProject(candidate);
   return candidate;
 }

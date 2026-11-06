@@ -1,0 +1,25 @@
+{
+  "sourceUsePlanVersion": 2,
+  "status": "planned",
+  "projectId": "replace-with-project-id",
+  "documentId": "replace-with-source-document-id",
+  "documentSha256": "replace-with-64-character-sha256",
+  "mode": "balanced",
+  "learningGoal": "Replace with the selected learning goal.",
+  "selectedClaimIds": [],
+  "selectedKnowledgeNodeIds": [],
+  "items": [
+    {
+      "id": "plan-item-001",
+      "claimIds": [],
+      "knowledgeNodeIds": [],
+      "visualCandidateIds": [],
+      "teachingJob": "process",
+      "chosenMode": "reconstruct",
+      "plannedSceneIds": ["planned-scene-process"],
+      "reason": "Replace with a concrete source-use decision.",
+      "legibilityStatus": "approved",
+      "permissionStatus": "allowed"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
 interface:
   display_name: "Animation Production"
-  short_description: "编排并验证 Storyline Studio 动画项目"
-  default_prompt: "Use $animation-production to turn my topic or script into a validated Storyline Studio animation project."
+  short_description: "生成带英语 TTS 和字幕数据的可编辑动画工程"
+  default_prompt: "Use $animation-production to turn my PDF, topic, or script into a source-grounded, editable Storyline Studio project; submit English narration and semantic voice intent to the platform TTS API for synchronized audio and captions, and do not render MP4 unless I explicitly request a supported platform export."

@@ -257,9 +257,8 @@ export default function App() {
             acknowledgeRemotionLicense
             style={{ width: '100%', height: '100%' }}
           />
-          {captionsEnabled && activeNarration && activeScene.captionMode !== 'hidden' && <div className={`caption caption-${activeScene.captionMode}`}><span>{activeNarration.text}</span></div>}
         </div>
-        <ScriptPanel scene={activeScene} localTime={localTime} visible={scriptVisible} />
+        <ScriptPanel scene={activeScene} localTime={localTime} locale={project.locale} visible={scriptVisible && captionsEnabled} spokenCharIndex={activeNarration?.spokenCharIndex} />
       </section>
       {mode === 'edit' && <Inspector project={project} scene={selectedScene} element={selectedElement} selectedItemId={selectedItemId} onUpdateScene={updateScene} onUpdateElement={updateElement} onUpdateTheme={(key, value) => commit((current) => ({ ...current, theme: { ...current.theme, [key]: value } }))} />}
     </main>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { AnimationProject } from '../model/types';
 import { findSceneAtTime } from '../model/timeline';
 
@@ -11,6 +11,7 @@ export function useNarration(
   onSegmentEnd?: (nextTime: number) => void,
 ) {
   const spokenRef = useRef<string>('');
+  const [boundary, setBoundary] = useState<{ key: string; charIndex: number }>();
   const onSegmentEndRef = useRef(onSegmentEnd);
   useEffect(() => {
     onSegmentEndRef.current = onSegmentEnd;
@@ -27,6 +28,7 @@ export function useNarration(
     if (!enabled || !playing || !active) {
       window.speechSynthesis.cancel();
       spokenRef.current = '';
+      setBoundary(undefined);
       return;
     }
     if (spokenRef.current === `${active.key}:${rate}`) return;
@@ -40,6 +42,10 @@ export function useNarration(
     if (requested || fallback) utterance.voice = requested || fallback || null;
     let disposed = false;
     let advanceTimer: number | undefined;
+    setBoundary({ key: active.key, charIndex: 0 });
+    utterance.onboundary = (event) => {
+      if (!disposed && event.name === 'word') setBoundary({ key: active.key, charIndex: event.charIndex });
+    };
     utterance.onend = () => {
       if (disposed || !onSegmentEndRef.current) return;
       advanceTimer = window.setTimeout(() => {
@@ -55,5 +61,5 @@ export function useNarration(
     };
   }, [active?.key, enabled, playing, project.locale, rate]);
 
-  return active;
+  return active ? { ...active, spokenCharIndex: boundary?.key === active.key ? boundary.charIndex : undefined } : undefined;
 }

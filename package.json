@@ -15,9 +15,12 @@
     "@remotion/transitions": "4.0.539",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "remotion": "4.0.539"
+    "remotion": "4.0.539",
+    "shiki": "^3.23.0"
   },
   "devDependencies": {
+    "@remotion/cli": "^4.0.539",
+    "@remotion/renderer": "^4.0.539",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
     "@vitejs/plugin-react": "^5.0.2",

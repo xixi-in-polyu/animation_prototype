@@ -6,8 +6,18 @@ import { framesToSeconds, getProjectDuration, getProjectDurationInFrames, second
 import { projectValidator } from './validator';
 import { compileElementMotion } from './motion';
 import { cloneScene } from '../components/SceneList';
+import { createDiagramDemoProject } from '../data/diagramDemoProject';
 
 describe('project model', () => {
+  it('accepts model-authored branching diagrams and rejects broken links', () => {
+    const project = createDiagramDemoProject();
+    expect(projectValidator.validate(project).filter((issue) => issue.severity === 'error')).toEqual([]);
+    const graph = project.scenes[0].elements.find((element) => element.type === 'diagram')?.diagram;
+    expect(graph?.edges).toHaveLength(4);
+    if (!graph) throw new Error('Missing diagram fixture');
+    graph.edges[0].to = 'missing-node';
+    expect(projectValidator.validate(project).some((issue) => issue.path.includes('diagram.edges[0]') && issue.severity === 'error')).toBe(true);
+  });
   it('validates the SDLC example without errors', () => {
     const errors = projectValidator.validate(createSdlcProject()).filter((issue) => issue.severity === 'error');
     expect(errors).toEqual([]);
@@ -32,7 +42,7 @@ describe('project model', () => {
     }));
     const migrated = migrateProject(legacy);
     const flow = migrated.scenes[1].elements.find((element) => element.type === 'flow');
-    expect(migrated.schemaVersion).toBe(4);
+    expect(migrated.schemaVersion).toBe(5);
     expect(migrated.renderConfig).toEqual({ fps: 30, width: 1920, height: 1080 });
     expect(flow?.items?.[0]).toEqual({ id: 's2-flow-item-1', label: 'Requirements' });
     expect(flow?.motion.beats).toHaveLength(4);
@@ -49,7 +59,7 @@ describe('project model', () => {
       });
     });
     const migrated = migrateProject(legacy);
-    expect(migrated.schemaVersion).toBe(4);
+    expect(migrated.schemaVersion).toBe(5);
     expect(migrated.scenes[0].transitionOut).toEqual({ preset: 'fade', duration: 0.6 });
     expect(migrated.scenes.at(-1)?.transitionOut).toBeUndefined();
     expect(migrated.scenes[0].elements[0].motion.enter.preset).toBe('fade-rise');
@@ -64,8 +74,8 @@ describe('project model', () => {
       scene.elements.forEach((element) => delete element.visual);
     });
     const migrated = migrateProject(legacy);
-    expect(migrated.schemaVersion).toBe(4);
-    expect(migrated.scenes[0].captionMode).toBe('keywords');
+    expect(migrated.schemaVersion).toBe(5);
+    expect(migrated.scenes[0].captionMode).toBe('bottom');
     expect(migrated.scenes[1].elements.find((element) => element.type === 'flow')?.visual).toEqual({ variant: 'rail', surface: 'none' });
     expect(projectValidator.validate(migrated).filter((issue) => issue.severity === 'error')).toEqual([]);
   });
@@ -77,6 +87,45 @@ describe('project model', () => {
     const errors = projectValidator.validate(project).filter((issue) => issue.severity === 'error');
     expect(errors.some((issue) => issue.path.endsWith('captionMode'))).toBe(true);
     expect(errors.some((issue) => issue.path.endsWith('visual.variant'))).toBe(true);
+  });
+
+  it('migrates schema v4 projects to schema v5', () => {
+    const legacy = JSON.parse(JSON.stringify(createSdlcProject()));
+    legacy.schemaVersion = 4;
+    const migrated = migrateProject(legacy);
+    expect(migrated.schemaVersion).toBe(5);
+    expect(projectValidator.validate(migrated).filter((issue) => issue.severity === 'error')).toEqual([]);
+  });
+
+  it('validates first-class image and sourced code elements', () => {
+    const project = createSdlcProject();
+    project.assets.push({
+      id: 'asset-slide-image', name: 'Slide image', kind: 'image', uri: 'data:image/png;base64,iVBORw0KGgo=', embedded: true,
+      source: { documentId: project.sourceDocuments[0].id, page: 2, extraction: 'native' },
+    });
+    const base = project.scenes[0].elements[0];
+    project.scenes[0].elements.push({
+      ...structuredClone(base), id: 'source-image', type: 'image', content: '', assetId: 'asset-slide-image', alt: 'Lifecycle diagram', fit: 'contain',
+    }, {
+      ...structuredClone(base), id: 'source-code', type: 'code', content: 'const ready = true', language: 'typescript', highlightLines: [1],
+      codeSource: { extraction: 'repository', file: 'src/example.ts', startLine: 1, endLine: 1 }, codeVerification: 'exact',
+      codePresentation: { theme: 'carbon-dark', windowChrome: 'mac', showLineNumbers: false, backdrop: 'soft-gray-gradient', fontSize: 24, padding: 32, frameInset: 60 },
+    });
+    expect(projectValidator.validate(project).filter((issue) => issue.severity === 'error')).toEqual([]);
+  });
+
+  it('rejects missing image assets and unverifiable code', () => {
+    const project = createSdlcProject();
+    const base = project.scenes[0].elements[0];
+    project.scenes[0].elements.push({ ...structuredClone(base), id: 'bad-image', type: 'image', content: '', assetId: 'missing', alt: '' });
+    project.scenes[0].elements.push({ ...structuredClone(base), id: 'bad-code', type: 'code', content: 'x()', language: '', highlightLines: [2] });
+    project.scenes[0].elements.push({ ...structuredClone(base), id: 'bad-code-presentation', type: 'code', content: 'x()', language: 'javascript', codeSource: { extraction: 'generated' }, codeVerification: 'syntax', codePresentation: { fontSize: 100, windowChrome: 'window' } as never });
+    const errors = projectValidator.validate(project).filter((issue) => issue.severity === 'error');
+    expect(errors.some((issue) => issue.path.endsWith('assetId'))).toBe(true);
+    expect(errors.some((issue) => issue.path.endsWith('codeSource'))).toBe(true);
+    expect(errors.some((issue) => issue.path.includes('highlightLines'))).toBe(true);
+    expect(errors.some((issue) => issue.path.includes('codePresentation.fontSize'))).toBe(true);
+    expect(errors.some((issue) => issue.path.includes('codePresentation.windowChrome'))).toBe(true);
   });
 
   it('uses integer frames as the deterministic playback clock', () => {
@@ -115,8 +164,14 @@ describe('project model', () => {
     const project = createSdlcProject();
     const scene = project.scenes[1];
     const element = scene.elements.find((item) => item.type === 'flow')!;
-    const first = compileElementMotion(element, scene, 16.8, project.renderConfig.fps);
-    const second = compileElementMotion(element, scene, 16.8, project.renderConfig.fps);
+    const cue = element.motion.beats[1];
+    const trigger = cue.trigger;
+    const cueStart = trigger.type === 'narration'
+      ? scene.narration.find((item) => item.id === trigger.segmentId)!.start + (trigger.offset ?? 0)
+      : trigger.at;
+    const sampleTime = cueStart + cue.duration / 2;
+    const first = compileElementMotion(element, scene, sampleTime, project.renderConfig.fps);
+    const second = compileElementMotion(element, scene, sampleTime, project.renderConfig.fps);
     expect(first.style).toEqual(second.style);
     expect(first.itemStyle(1, element.items?.length ?? 0)).toEqual(second.itemStyle(1, element.items?.length ?? 0));
     expect(first.activeBeatIndex).toBe(1);

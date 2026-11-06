@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "id": "project-starter",
   "title": "Animation title",
   "description": "Replace this starter with the animation's through-line.",
@@ -10,7 +10,7 @@
   "sourceDocuments": [],
   "knowledgeNodes": [],
   "chapters": [
-    { "id": "chapter-main", "title": "Main idea", "shortTitle": "Main", "color": "#9FAF91" }
+    { "id": "chapter-main", "title": "Main idea", "shortTitle": "Main", "color": "#1F4E79" }
   ],
   "scenes": [
     {
@@ -28,7 +28,7 @@
           "y": 14,
           "width": 56,
           "height": 28,
-          "style": { "accent": "#9FAF91", "tone": "glass", "align": "left" },
+          "style": { "accent": "#1F4E79", "tone": "glass", "align": "left" },
           "motion": {
             "enter": {
               "id": "scene-opening-title-enter",
@@ -66,7 +66,7 @@
           "y": 48,
           "width": 35,
           "height": 9,
-          "style": { "accent": "#8EA6B4", "tone": "outline", "align": "center" },
+          "style": { "accent": "#8A3B2E", "tone": "outline", "align": "center" },
           "motion": {
             "enter": {
               "id": "scene-opening-badge-enter",
@@ -97,18 +97,18 @@
         }
       ],
       "knowledgeNodeIds": [],
-      "captionMode": "keywords"
+      "captionMode": "bottom"
     }
   ],
   "assets": [],
   "theme": {
-    "name": "Morandi Paper",
-    "background": "#F4F1EB",
-    "surface": "#E7E1D8",
-    "foreground": "#303535",
-    "muted": "#737A78",
-    "accent": "#9FAF91",
-    "accentAlt": "#8EA6B4",
-    "fontFamily": "Inter, ui-sans-serif, system-ui, sans-serif"
+    "name": "white-editorial",
+    "background": "#FFFFFF",
+    "surface": "#F6F6F3",
+    "foreground": "#111111",
+    "muted": "#666666",
+    "accent": "#1F4E79",
+    "accentAlt": "#8A3B2E",
+    "fontFamily": "\"Times New Roman\", Times, serif"
   }
 }

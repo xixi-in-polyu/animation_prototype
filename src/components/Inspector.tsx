@@ -1,6 +1,7 @@
 import type { AnimationProject, ElementType, MotionCue, MotionPreset, Scene, SceneElement, SceneTemplate } from '../model/types';
+import { useState } from 'react';
 import { AMBIENT_PRESETS, BEAT_PRESETS, ENTER_PRESETS, EXIT_PRESETS } from '../model/motion';
-import { CAPTION_MODES, SURFACE_STYLES, VISUAL_VARIANTS, defaultVisualForType } from '../model/visual';
+import { SURFACE_STYLES, VISUAL_VARIANTS, defaultVisualForType } from '../model/visual';
 
 interface Props {
   project: AnimationProject;
@@ -13,7 +14,7 @@ interface Props {
 }
 
 const templates: SceneTemplate[] = ['opening', 'concept', 'process', 'comparison', 'incident', 'architecture', 'closing'];
-const elementTypes: ElementType[] = ['title', 'text', 'cards', 'lifecycle', 'flow', 'comparison', 'timeline', 'metrics', 'topology', 'formula', 'badge'];
+const elementTypes: ElementType[] = ['title', 'text', 'cards', 'lifecycle', 'flow', 'comparison', 'timeline', 'metrics', 'topology', 'diagram', 'formula', 'badge', 'image', 'code'];
 
 export function Inspector({ project, scene, element, selectedItemId, onUpdateScene, onUpdateElement, onUpdateTheme }: Props) {
   const selectedItem = element?.items?.find((item) => item.id === selectedItemId);
@@ -27,7 +28,7 @@ export function Inspector({ project, scene, element, selectedItemId, onUpdateSce
           <Field label="Template"><select value={scene.template} onChange={(event) => onUpdateScene({ template: event.target.value as SceneTemplate })}>{templates.map((item) => <option key={item}>{item}</option>)}</select></Field>
         </div>
         <Field label="Chapter"><select value={scene.chapterId} onChange={(event) => onUpdateScene({ chapterId: event.target.value })}>{project.chapters.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></Field>
-        <Field label="Caption layout"><select value={scene.captionMode} onChange={(event) => onUpdateScene({ captionMode: event.target.value as Scene['captionMode'] })}>{CAPTION_MODES.map((item) => <option key={item}>{item}</option>)}</select></Field>
+        <p className="inspector-help">The complete scene transcript appears outside the video frame. The word currently being narrated is highlighted automatically.</p>
         <div className="subheading"><small>SCENE TRANSITION</small><span>{scene.transitionOut ? `${scene.transitionOut.duration}s` : 'none'}</span></div>
         <div className="field-row">
           <Field label="Transition"><select value={scene.transitionOut?.preset ?? 'none'} onChange={(event) => onUpdateScene({ transitionOut: event.target.value === 'none' ? undefined : { preset: event.target.value as NonNullable<Scene['transitionOut']>['preset'], duration: scene.transitionOut?.duration ?? 0.6 } })}><option value="none">none</option><option value="fade">fade</option><option value="slide-left">slide-left</option><option value="slide-up">slide-up</option><option value="wipe">wipe</option></select></Field>
@@ -53,7 +54,7 @@ export function Inspector({ project, scene, element, selectedItemId, onUpdateSce
         <p className="inspector-help">This visible item is stored independently, so generated content can be selected, validated and repaired without replacing the whole component.</p>
       </> : <>
         <div className="field-row">
-          <Field label="Type"><select value={element.type} onChange={(event) => { const type = event.target.value as ElementType; onUpdateElement({ type, visual: defaultVisualForType(type) }); }}>{elementTypes.map((item) => <option key={item}>{item}</option>)}</select></Field>
+          <Field label="Type"><select value={element.type} onChange={(event) => { const type = event.target.value as ElementType; onUpdateElement({ type, visual: defaultVisualForType(type), ...(type === 'diagram' && !element.diagram ? { diagram: { nodes: [{ id: 'start', label: 'Start', x: 5, y: 42, width: 25, height: 16 }, { id: 'end', label: 'End', x: 70, y: 42, width: 25, height: 16 }], edges: [{ id: 'link', from: 'start', to: 'end', kind: 'directed' as const }] } } : {}) }); }}>{elementTypes.map((item) => <option key={item}>{item}</option>)}</select></Field>
           <Field label="Ambient"><select value={element.motion.ambient ?? 'none'} onChange={(event) => onUpdateElement({ motion: { ...element.motion, ambient: event.target.value as NonNullable<SceneElement['motion']['ambient']> } })}>{AMBIENT_PRESETS.map((item) => <option key={item}>{item}</option>)}</select></Field>
         </div>
         <div className="field-row">
@@ -61,10 +62,35 @@ export function Inspector({ project, scene, element, selectedItemId, onUpdateSce
           <Field label="Surface"><select value={element.visual.surface} onChange={(event) => onUpdateElement({ visual: { ...element.visual, surface: event.target.value as SceneElement['visual']['surface'] } })}>{SURFACE_STYLES.map((item) => <option key={item}>{item}</option>)}</select></Field>
         </div>
         <Field label="Content"><textarea rows={5} value={element.content} onChange={(event) => onUpdateElement({ content: event.target.value })} /></Field>
-        <Field label="Items — one per line"><textarea rows={6} value={(element.items ?? []).map((item) => item.label).join('\n')} onChange={(event) => {
+        {element.type === 'image' && <>
+          <Field label="Image asset"><select value={element.assetId ?? ''} onChange={(event) => onUpdateElement({ assetId: event.target.value })}><option value="">Select asset</option>{project.assets.filter((asset) => asset.kind === 'image').map((asset) => <option key={asset.id} value={asset.id}>{asset.name}</option>)}</select></Field>
+          <div className="field-row"><Field label="Fit"><select value={element.fit ?? 'contain'} onChange={(event) => onUpdateElement({ fit: event.target.value as SceneElement['fit'] })}><option value="contain">contain</option><option value="cover">cover</option></select></Field><Field label="Alt text"><input value={element.alt ?? ''} onChange={(event) => onUpdateElement({ alt: event.target.value })} /></Field></div>
+        </>}
+        {element.type === 'code' && <>
+          <div className="field-row"><Field label="Language"><input value={element.language ?? ''} onChange={(event) => onUpdateElement({ language: event.target.value })} /></Field><Field label="Highlight lines"><input value={(element.highlightLines ?? []).join(', ')} onChange={(event) => onUpdateElement({ highlightLines: event.target.value.split(',').map(Number).filter(Number.isInteger) })} /></Field></div>
+          <Field label="Verification"><select value={element.codeVerification ?? 'syntax'} onChange={(event) => onUpdateElement({ codeVerification: event.target.value as SceneElement['codeVerification'] })}><option value="exact">exact repository lines</option><option value="syntax">syntax checked</option><option value="display-only">display only</option></select></Field>
+          <Field label="Source file"><input value={element.codeSource?.file ?? ''} onChange={(event) => onUpdateElement({ codeSource: { extraction: 'repository', ...element.codeSource, file: event.target.value } })} /></Field>
+          <div className="subheading"><small>CODE PRESENTATION</small><span>{element.codePresentation?.windowChrome ?? 'toolbar'}</span></div>
+          <div className="field-row">
+            <Field label="Theme"><select value={element.codePresentation?.theme ?? 'github-dark'} onChange={(event) => onUpdateElement({ codePresentation: { ...element.codePresentation, theme: event.target.value as NonNullable<SceneElement['codePresentation']>['theme'] } })}><option value="github-dark">github-dark</option><option value="carbon-dark">carbon-dark</option></select></Field>
+            <Field label="Window"><select value={element.codePresentation?.windowChrome ?? 'toolbar'} onChange={(event) => onUpdateElement({ codePresentation: { ...element.codePresentation, windowChrome: event.target.value as NonNullable<SceneElement['codePresentation']>['windowChrome'] } })}><option value="toolbar">toolbar</option><option value="mac">mac</option><option value="none">none</option></select></Field>
+          </div>
+          <div className="field-row">
+            <Field label="Backdrop"><select value={element.codePresentation?.backdrop ?? 'none'} onChange={(event) => onUpdateElement({ codePresentation: { ...element.codePresentation, backdrop: event.target.value as NonNullable<SceneElement['codePresentation']>['backdrop'] } })}><option value="none">none</option><option value="soft-gray">soft-gray</option><option value="soft-gray-gradient">soft-gray-gradient</option></select></Field>
+            <Field label="Line numbers"><select value={String(element.codePresentation?.showLineNumbers ?? true)} onChange={(event) => onUpdateElement({ codePresentation: { ...element.codePresentation, showLineNumbers: event.target.value === 'true' } })}><option value="true">show</option><option value="false">hide</option></select></Field>
+          </div>
+          <div className="motion-number-grid">
+            <Field label="Font px"><input type="number" min="12" max="36" value={element.codePresentation?.fontSize ?? 20} onChange={(event) => onUpdateElement({ codePresentation: { ...element.codePresentation, fontSize: Number(event.target.value) } })} /></Field>
+            <Field label="Padding"><input type="number" min="0" max="72" value={element.codePresentation?.padding ?? 16} onChange={(event) => onUpdateElement({ codePresentation: { ...element.codePresentation, padding: Number(event.target.value) } })} /></Field>
+            <Field label="Inset X"><input type="number" min="0" max="240" value={element.codePresentation?.frameInset ?? 0} onChange={(event) => onUpdateElement({ codePresentation: { ...element.codePresentation, frameInset: Number(event.target.value) } })} /></Field>
+          </div>
+          <Field label="Inset Y"><input type="number" min="0" max="300" value={element.codePresentation?.frameInsetY ?? element.codePresentation?.frameInset ?? 0} onChange={(event) => onUpdateElement({ codePresentation: { ...element.codePresentation, frameInsetY: Number(event.target.value) } })} /></Field>
+        </>}
+        {element.type === 'diagram' && <DiagramEditor key={element.id} element={element} onUpdate={onUpdateElement} />}
+        {element.type !== 'diagram' && <Field label="Items — one per line"><textarea rows={6} value={(element.items ?? []).map((item) => item.label).join('\n')} onChange={(event) => {
           const labels = event.target.value.split('\n').filter((label) => label.trim());
           onUpdateElement({ items: labels.map((label, index) => element.items?.[index] ?? { id: `${element.id}-item-${Date.now()}-${index + 1}`, label }).map((item, index) => ({ ...item, label: labels[index] })) });
-        }} /></Field>
+        }} /></Field>}
         <div className="geometry-grid">
           {(['x', 'y', 'width', 'height'] as const).map((key) => <Field key={key} label={`${key.toUpperCase()} %`}><input type="number" min="0" max="100" value={element[key]} onChange={(event) => onUpdateElement({ [key]: Number(event.target.value) })} /></Field>)}
         </div>
@@ -104,6 +130,19 @@ function CueEditor({ cue, scene, presets, onChange }: { cue: MotionCue; scene: S
       <Field label="Intensity"><input type="number" min="0" max="2" step=".05" value={cue.intensity ?? 1} onChange={(event) => onChange({ ...cue, intensity: Number(event.target.value) })} /></Field>
     </div>
   </div>;
+}
+
+function DiagramEditor({ element, onUpdate }: { element: SceneElement; onUpdate: (patch: Partial<SceneElement>) => void }) {
+  const [draft, setDraft] = useState(JSON.stringify(element.diagram ?? { nodes: [], edges: [] }, null, 2));
+  const [error, setError] = useState('');
+  return <Field label="Diagram nodes and edges (JSON)"><textarea rows={16} value={draft} onChange={(event) => setDraft(event.target.value)} onBlur={() => {
+    try {
+      const graph = JSON.parse(draft) as SceneElement['diagram'];
+      if (!graph || !Array.isArray(graph.nodes) || !Array.isArray(graph.edges)) throw new Error('Expected nodes and edges arrays.');
+      onUpdate({ diagram: graph });
+      setError('');
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Invalid diagram JSON.'); }
+  }} />{error && <small role="alert">{error}</small>}</Field>;
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {

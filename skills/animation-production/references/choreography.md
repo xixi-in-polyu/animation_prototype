@@ -36,13 +36,13 @@ Keep narration segments semantically complete. Align segment boundaries with vis
 
 ## Visual mapping
 
-- sequence or dependency → `flow`
+- linear sequence → `flow`; branching or conditional flow → `diagram`
 - recurrence → `lifecycle`
 - parallel categories → `cards`
 - opposition or before/after → `comparison`
 - chronological change → `timeline`
 - quantities and KPIs → `metrics`
-- system relationships → `topology`
+- linear system chain → `topology`; tree or multi-path system → `diagram`
 - equation or calculation → `formula`
 - thesis, qualifier, or key takeaway → `title`, `text`, or `badge`
 
@@ -53,7 +53,7 @@ Prefer direct labels. Put explanation in narration, not in dense on-screen parag
 Use motion to reveal meaning:
 
 - `draw` + `trace` for flows, timelines, and topologies
-- `spring-scale` + `count-up` for metrics and formulas
+- `spring-scale` + `count-up` for metric/formula emphasis; the current preset scales the displayed value and does not numerically interpolate it
 - `fade-rise` + `lift` for cards and comparisons
 - `spring-scale` + `glow` for lifecycle emphasis
 - `fade-rise` + `pulse` for titles, text, and badges

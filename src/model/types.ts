@@ -1,4 +1,4 @@
-export const CURRENT_SCHEMA_VERSION = 4;
+export const CURRENT_SCHEMA_VERSION = 5;
 
 export type CaptionMode = 'bottom' | 'side' | 'keywords' | 'hidden';
 export type VisualVariant = 'auto' | 'grid' | 'rail' | 'split' | 'orbital' | 'editorial' | 'diagram' | 'poster' | 'minimal';
@@ -7,6 +7,17 @@ export type SurfaceStyle = 'none' | 'soft' | 'outline';
 export interface ElementVisual {
   variant: VisualVariant;
   surface: SurfaceStyle;
+}
+
+export interface CodePresentation {
+  theme?: 'github-dark' | 'carbon-dark';
+  windowChrome?: 'toolbar' | 'mac' | 'none';
+  showLineNumbers?: boolean;
+  backdrop?: 'none' | 'soft-gray' | 'soft-gray-gradient';
+  fontSize?: number;
+  padding?: number;
+  frameInset?: number;
+  frameInsetY?: number;
 }
 
 export type MotionPreset =
@@ -67,8 +78,11 @@ export type ElementType =
   | 'timeline'
   | 'metrics'
   | 'topology'
+  | 'diagram'
   | 'formula'
-  | 'badge';
+  | 'badge'
+  | 'image'
+  | 'code';
 
 export type SceneTemplate =
   | 'opening'
@@ -82,15 +96,39 @@ export type SceneTemplate =
 export interface SourceDocument {
   id: string;
   name: string;
-  mimeType: 'application/pdf';
+  mimeType: 'application/pdf' | 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
   pageCount: number;
   importedAt: string;
   contentBlocks?: Array<{
     id: string;
     page: number;
-    kind: 'heading' | 'paragraph' | 'image' | 'table' | 'formula';
+    kind: 'heading' | 'paragraph' | 'image' | 'table' | 'formula' | 'code';
     text?: string;
+    assetId?: string;
+    bbox?: NormalizedBox;
   }>;
+}
+
+export interface NormalizedBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export type AssetExtractionMethod = 'native' | 'rendered-page' | 'rendered-crop' | 'text-layer' | 'ocr' | 'repository' | 'generated';
+
+export interface SourceReference {
+  documentId?: string;
+  page?: number;
+  slide?: number;
+  objectId?: string;
+  bbox?: NormalizedBox;
+  extraction: AssetExtractionMethod;
+  file?: string;
+  startLine?: number;
+  endLine?: number;
+  commit?: string;
 }
 
 export interface KnowledgeNode {
@@ -117,6 +155,7 @@ export interface SceneElement {
   type: ElementType;
   content: string;
   items?: SceneElementItem[];
+  diagram?: DiagramGraph;
   x: number;
   y: number;
   width: number;
@@ -129,6 +168,20 @@ export interface SceneElement {
   motion: ElementMotion;
   visual: ElementVisual;
   sourcePages?: number[];
+  assetId?: string;
+  fit?: 'contain' | 'cover';
+  crop?: NormalizedBox;
+  alt?: string;
+  language?: string;
+  highlightLines?: number[];
+  codeSource?: SourceReference;
+  codeVerification?: 'exact' | 'syntax' | 'display-only';
+  codePresentation?: CodePresentation;
+}
+
+export interface DiagramGraph {
+  nodes: Array<{ id: string; label: string; x: number; y: number; width: number; height: number; revealAt?: number; tone?: 'primary' | 'secondary' | 'neutral' }>;
+  edges: Array<{ id: string; from: string; to: string; label?: string; revealAt?: number; kind?: 'directed' | 'undirected' }>;
 }
 
 export interface SceneElementItem {
@@ -173,6 +226,10 @@ export interface AssetManifestItem {
   kind: 'image' | 'audio' | 'font';
   uri: string;
   embedded: boolean;
+  sha256?: string;
+  width?: number;
+  height?: number;
+  source?: SourceReference;
 }
 
 export interface AnimationProject {

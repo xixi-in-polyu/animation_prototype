@@ -13,15 +13,16 @@ export function defaultVisualForType(type: ElementType): ElementVisual {
     case 'timeline': return { variant: 'rail', surface: 'none' };
     case 'metrics': return { variant: 'poster', surface: 'none' };
     case 'topology': return { variant: 'diagram', surface: 'none' };
+    case 'diagram': return { variant: 'diagram', surface: 'none' };
     case 'formula': return { variant: 'poster', surface: 'none' };
     case 'badge': return { variant: 'minimal', surface: 'outline' };
+    case 'image': return { variant: 'editorial', surface: 'none' };
+    case 'code': return { variant: 'minimal', surface: 'outline' };
     default: return { variant: 'minimal', surface: 'none' };
   }
 }
 
 export function defaultCaptionForTemplate(template: SceneTemplate): CaptionMode {
-  if (template === 'opening' || template === 'closing') return 'keywords';
-  if (template === 'architecture') return 'hidden';
-  if (template === 'concept' || template === 'incident') return 'side';
+  void template;
   return 'bottom';
 }

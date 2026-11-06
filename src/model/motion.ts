@@ -9,13 +9,13 @@ export const AMBIENT_PRESETS: AmbientMotion[] = ['none', 'drift', 'breathe', 'or
 export const MOTION_PRESETS: MotionPreset[] = [...ENTER_PRESETS, ...BEAT_PRESETS, ...EXIT_PRESETS];
 
 const enterForType = (type: ElementType): MotionPreset => {
-  if (type === 'flow' || type === 'timeline' || type === 'topology') return 'draw';
+  if (type === 'flow' || type === 'timeline' || type === 'topology' || type === 'diagram') return 'draw';
   if (type === 'lifecycle' || type === 'metrics' || type === 'formula') return 'spring-scale';
   return 'fade-rise';
 };
 
 const beatForType = (type: ElementType): MotionPreset => {
-  if (type === 'flow' || type === 'timeline' || type === 'topology') return 'trace';
+  if (type === 'flow' || type === 'timeline' || type === 'topology' || type === 'diagram') return 'trace';
   if (type === 'metrics') return 'count-up';
   if (type === 'cards' || type === 'comparison') return 'lift';
   if (type === 'lifecycle') return 'glow';

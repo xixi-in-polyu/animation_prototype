@@ -48,7 +48,7 @@ export function PlayerControls(props: Props) {
       </div>
       <div className="transport-right">
         <button className={props.narrationEnabled ? 'enabled' : ''} title="Narration" onClick={() => props.onNarrationChange(!props.narrationEnabled)}><Icon name={props.narrationEnabled ? 'volume' : 'mute'} /></button>
-        <button className={props.captionsEnabled ? 'enabled' : ''} title="Captions" onClick={() => props.onCaptionsChange(!props.captionsEnabled)}><Icon name="captions" /></button>
+        <button className={props.captionsEnabled ? 'enabled' : ''} title="Page transcript" onClick={() => props.onCaptionsChange(!props.captionsEnabled)}><Icon name="captions" /></button>
         <label className="rate-select"><span>VOICE</span><select value={props.rate} onChange={(event) => props.onRateChange(Number(event.target.value))}><option value=".85">0.85×</option><option value="1">1.0×</option><option value="1.15">1.15×</option><option value="1.3">1.3×</option></select></label>
       </div>
     </div>
